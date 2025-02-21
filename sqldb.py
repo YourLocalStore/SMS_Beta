@@ -6,6 +6,8 @@ from mysql import *
 from mysql.connector import errorcode
 from passlib.hash import pbkdf2_sha256
 
+load_dotenv()
+
 class ConnectSQLDatabase:
     db_name = "tester"
 
@@ -161,19 +163,24 @@ class CheckDBState(DBOperations):
 
         return f"Current Databases in '{self.db_name}': " + \
                f"{', '.join(map(str, [i[0] for i in databases]))}"
+    
+def try_connection():
+    connect_db = ConnectSQLDatabase()
+    db_status = CheckDBState()
+    print(db_status.return_status())
 
 def main():
-    connect_db = ConnectSQLDatabase()
-
+    pass
+    # connect_db = ConnectSQLDatabase()
     # db_status = CheckDBState()
     # print(db_status.return_status())
-    # print(db_status.check_dbs())
 
-    register = RegisterPerson(fname = "", lname = "", username = "", email = "", password = "")
-    print(register.register_table())
+    # # print(db_status.check_dbs())
 
-    register.register_user("John", "Doe", "johndoe123", "johndoe123@gmail.com", "1234567890")
+    # register = RegisterPerson(fname = "", lname = "", username = "", email = "", password = "")
+    # print(register.register_table())
+
+    # register.register_user("John", "Doe", "johndoe123", "johndoe123@gmail.com", "1234567890")
 
 if __name__ == "__main__":
-    load_dotenv()
     main()
