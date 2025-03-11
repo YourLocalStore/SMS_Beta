@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from mysql import *
 from mysql.connector import errorcode
 from passlib.hash import pbkdf2_sha256
+from abc import ABC, abstractmethod
 
 load_dotenv()
 
@@ -12,39 +13,39 @@ class ConnectSQLDatabase:
     db_name = "tester"
 
     def __init__(self):
-        self.sql_serv = mysql.connector.connect(
-            charset = "utf8",
-            use_unicode = True,
-
-            host = "localhost",
-            port = "3306",
-
-            user = os.environ.get("USER"),
-            password = os.environ.get("PASSWORD"),
-            connection_timeout = 300
-        )
-        self.db_cursor = self.sql_serv.cursor()
-
         try:
-            self.db_cursor.execute(
-                f"USE {self.db_name}"
+            self.sql_serv = mysql.connector.connect(
+                charset = "utf8",
+                use_unicode = True,
+
+                host = "localhost",
+                port = "3306",
+
+                user = os.environ.get("USER"),
+                password = os.environ.get("PASSWORD"),
+                connection_timeout = 300
             )
+            self.db_cursor = self.sql_serv.cursor()
 
-            self.db_cursor.close()
+            try:
+                self.db_cursor.execute(f"USE {self.db_name}")
+                self.db_cursor.close()
 
-        except mysql.connector.Error as err:
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Connection failed due to password/username. \n")
+            except mysql.connector.Error as err:
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    print("Connection failed due to password/username. \n")
 
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print(f"Attempting to create database {self.db_name}...")
-                ConnectSQLDatabase.create_db(self, self.db_cursor)
+                elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                    print(f"Attempting to create database {self.db_name}...")
+                    ConnectSQLDatabase.create_db(self, self.db_cursor)
+
+        except Exception as err:
+            print("The database must be down... Please contact the creator!\n")
+            return None
 
     def create_db(self, cursor):
         try:
-            cursor.execute(
-                f"CREATE DATABASE {self.db_name}"
-            )
+            cursor.execute(f"CREATE DATABASE {self.db_name}")
             print(f"Database: {self.db_name} has been created. \n")
 
         except mysql.connector.Error as err:
@@ -73,6 +74,130 @@ class DBOperations(ConnectSQLDatabase):
     
     def close_cursor_connection(self):
         return self.db_cursor.close()
+    
+class LoginCheck(ABC):
+    @abstractmethod
+    def login_user_exists(self):
+        pass
+
+    @abstractmethod
+    def login_pwd_check(self):
+        pass
+
+class StudentLoginCheck(ConnectSQLDatabase, LoginCheck):
+    def __init__(self):
+        super().__init__()
+        self.db_cursor = self.sql_serv.cursor()
+
+    def login_user_exists(self, username):
+        try:
+            check_individual = """SELECT * FROM users WHERE UserName = %s"""
+            individual_val = str(username)
+
+            self.db_cursor.execute(check_individual, (individual_val,))
+            user_exists = self.db_cursor.fetchone()
+
+            if user_exists:
+                return True
+            else:
+                print("The user does not exist! \n")
+                return False
+            
+        except Exception as err:
+            print(err)
+
+    def login_pwd_check(self, username, pwd):
+        try:
+            check_individual = """SELECT password FROM users WHERE UserName = %s"""
+            individual_val = str(username)
+
+            self.db_cursor.execute(check_individual, (individual_val,))
+            pwd_valid = self.db_cursor.fetchone()
+
+            if pwd_valid[0] == pwd:
+                return True
+            
+            else:
+                return False
+              
+        except Exception as err:
+            print(err)
+
+class TeacherLoginCheck(ConnectSQLDatabase, LoginCheck):
+    def __init__(self):
+        super().__init__()
+
+    def login_user_exists(self, username):
+        try:
+            check_individual = """SELECT * FROM teachers WHERE UserName = %s"""
+            individual_val = str(username)
+
+            self.db_cursor.execute(check_individual, (individual_val,))
+            user_exists = self.db_cursor.fetchone()
+
+            if user_exists:
+                return True
+            else:
+                print("The user does not exist! \n")
+                return False
+            
+        except Exception as err:
+            print(err)
+
+    def login_pwd_check(self, username, pwd):
+        try:
+            check_individual = """SELECT password FROM teachers WHERE UserName = %s"""
+            individual_val = str(username)
+
+            self.db_cursor.execute(check_individual, (individual_val,))
+            pwd_valid = self.db_cursor.fetchone()
+
+            if pwd_valid[0] == pwd:
+                return True
+            
+            else:
+                return False
+              
+        except Exception as err:
+            print(err)
+
+class AdminLoginCheck(ConnectSQLDatabase, LoginCheck):
+    def __init__(self):
+        super().__init__()
+
+    def login_user_exists(self, username):
+        try:
+            check_individual = """SELECT * FROM administrators WHERE UserName = %s"""
+            individual_val = str(username)
+
+            self.db_cursor.execute(check_individual, (individual_val,))
+            user_exists = self.db_cursor.fetchone()
+
+            if user_exists:
+                return True
+            else:
+                print("The user does not exist! \n")
+                return False
+            
+        except Exception as err:
+            print(err)
+
+    def login_pwd_check(self, username, pwd):
+        try:
+            check_individual = """SELECT password FROM administrators WHERE UserName = %s"""
+            individual_val = str(username)
+
+            self.db_cursor.execute(check_individual, (individual_val,))
+            pwd_valid = self.db_cursor.fetchone()
+
+            if pwd_valid[0] == pwd:
+                return True
+            
+            else:
+                return False
+              
+        except Exception as err:
+            print(err)
     
 class RegisterPerson(ConnectSQLDatabase):
     user_table = {}
@@ -105,7 +230,8 @@ class RegisterPerson(ConnectSQLDatabase):
 
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                return "User table exists."
+                print("User table exists.")
+                return True
             else:
                 print(err)
 
@@ -123,7 +249,7 @@ class RegisterPerson(ConnectSQLDatabase):
             # self.sql_serv.commit()
 
             register_query = """INSERT INTO users(FirstName, LastName, UserName, EmailAddress, Password) 
-                        VALUES (%s, %s, %s, %s, %s)"""
+                                VALUES (%s, %s, %s, %s, %s)"""
             register_val = (fname, lname, username, email, password)
 
             check_individual = """SELECT * FROM users WHERE UserName = %s"""
@@ -148,12 +274,6 @@ class RegisterPerson(ConnectSQLDatabase):
 class CheckDBState(DBOperations):
     def __init__(self):
         super().__init__()
-
-    def return_status(self):
-        if self.sql_serv.is_connected:
-            return ("Connection to database successful!")
-        else:
-            return ("Connection to database unsuccessful.")
     
     def check_dbs(self):
         self.db_cursor = self.sql_serv.cursor()
@@ -164,23 +284,18 @@ class CheckDBState(DBOperations):
         return f"Current Databases in '{self.db_name}': " + \
                f"{', '.join(map(str, [i[0] for i in databases]))}"
     
-def try_connection():
-    connect_db = ConnectSQLDatabase()
-    db_status = CheckDBState()
-    print(db_status.return_status())
+    def return_status(self):
+        if self.sql_serv.is_connected:
+            return True
+        else:
+            return False
+    
+    @staticmethod
+    def try_connection():
+        connect_db = ConnectSQLDatabase()
 
 def main():
     pass
-    # connect_db = ConnectSQLDatabase()
-    # db_status = CheckDBState()
-    # print(db_status.return_status())
-
-    # # print(db_status.check_dbs())
-
-    # register = RegisterPerson(fname = "", lname = "", username = "", email = "", password = "")
-    # print(register.register_table())
-
-    # register.register_user("John", "Doe", "johndoe123", "johndoe123@gmail.com", "1234567890")
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,9 @@ import sqldb
 class AddStudent:
     pass
 
+class ViewClassrooms:
+    pass
+
 class RemoveStudent:
     pass
 
