@@ -1,5 +1,5 @@
 import sqldb
-import userinterfaces
+import userinterfacing
 import visuals.titlescreen as titlescreen
 import time
 
@@ -7,12 +7,16 @@ from abc import ABC, abstractmethod
 from threading import Thread
 
 class LoginInterface():
-    def __init__(self, fname, lname, username, email, password):
+    def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
         self.__fname = fname
         self.__lname = lname
+
         self.__email = email
         self.username = username
         self.__password = password
+
+        self.__teacher_id = teacher_id
+        self.__administrator_id = administrator_id
 
     def selection(self):
         while True:
@@ -47,13 +51,16 @@ class LoginInterface():
                             if staff_selection == 1:
                                 teacher_login = TeacherLoginInterface(self.__fname, self.__lname, 
                                                                       self.username, self.__email,
-                                                                      self.__password)
-                                teacher_login.login(username="", pwd="", employee_id="")
+                                                                      self.__password, self.__teacher_id, 
+                                                                      self.__administrator_id)
+                                teacher_login.login(username="", pwd="")
 
                             elif staff_selection == 2:
                                 administrator_login = AdminLoginInterface(self.__fname, self.__lname, 
                                                                           self.username, self.__email,
-                                                                          self.__password)
+                                                                          self.__password, self.__teacher_id,
+                                                                          self.__administrator_id)
+                                
                                 administrator_login.login(username="", pwd="", employee_id="")
 
                             elif staff_selection == 3:
@@ -97,10 +104,10 @@ class LoginInterface():
                 continue
 
 class AdminLoginInterface(LoginInterface):
-    def __init__(self, fname, lname, username, email, password):
-        super().__init__(fname, lname, username, email, password)
+    def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
+        super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
     
-    def login(self, username, pwd, employee_id):
+    def login(self, username, pwd):
         print("\n   < Go Back (Enter 0) \t\t || Administrator Login Page ||" + \
               "\n # ------------------------------------------------------------- # \n ")
         
@@ -114,8 +121,8 @@ class AdminLoginInterface(LoginInterface):
                     login_status = False
                     break
 
-                employee_id = input("Enter your Employee ID: ")
-                if employee_id == "0":
+                self._LoginInterface__administrator_id = input("Enter your Employee ID: ")
+                if self._LoginInterface__administrator_id == "0":
                     login_status = False
                     break
 
@@ -124,19 +131,20 @@ class AdminLoginInterface(LoginInterface):
                     login_status = False
                     break
 
-                user_valid = admin_login_obj.login_user_exists(username, employee_id)
+                user_valid = admin_login_obj.login_user_exists(username, self._LoginInterface__administrator_id)
                 pwd_valid = admin_login_obj.login_pwd_check(username, pwd)
 
-                if (not user_valid) or (not pwd_valid) or (not employee_id):
+                if (not user_valid) or (not pwd_valid) or (not self._LoginInterface__administrator_id):
                     continue
                 else:
                     print("Logging in...")
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
                     admin_info = db_operation.get_user_info(tables[0], username)
-                    admin_user = userinterfaces.AdminInterface(admin_info[1], admin_info[2],
+                    admin_user = userinterfacing.AdminInterface(admin_info[1], admin_info[2],
                                                                 admin_info[3], admin_info[4],
-                                                                admin_info[5])
+                                                                admin_info[5], self._LoginInterface__teacher_id,
+                                                                self._LoginInterface__administrator_id)
                     if type(admin_user) == None:
                         break
                 break
@@ -146,10 +154,10 @@ class AdminLoginInterface(LoginInterface):
         return False
 
 class TeacherLoginInterface(LoginInterface):
-    def __init__(self, fname, lname, username, email, password):
-        super().__init__(fname, lname, username, email, password)
+    def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
+        super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
     
-    def login(self, username, pwd, employee_id):
+    def login(self, username, pwd):
         print("\n   < Go Back (Enter 0) \t\t || Teacher Registration Page ||" + \
               "\n # ------------------------------------------------------------- # \n ")
         
@@ -163,8 +171,8 @@ class TeacherLoginInterface(LoginInterface):
                     login_status = False
                     break
 
-                employee_id = input("Enter your Employee ID: ")
-                if employee_id == "0":
+                self._LoginInterface__teacher_id = int(input("Enter your Employee ID: "))
+                if self._LoginInterface__teacher_id == "0":
                     login_status = False
                     break
 
@@ -173,20 +181,21 @@ class TeacherLoginInterface(LoginInterface):
                     login_status = False
                     break
 
-                user_valid = teacher_login_obj.login_user_exists(username, employee_id)
+                user_valid = teacher_login_obj.login_user_exists(username, self._LoginInterface__teacher_id)
                 pwd_valid = teacher_login_obj.login_pwd_check(username, pwd)
 
-                if (not user_valid) or (not pwd_valid) or (not employee_id):
+                if (not user_valid) or (not pwd_valid) or (not self._LoginInterface__teacher_id):
                     continue
                 else:
                     print("Logging in...")
 
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
-                    teacher_info = db_operation.get_user_info(tables[1], username)
-                    teacher_user = userinterfaces.TeacherInterface(teacher_info[1], teacher_info[2],
+                    teacher_info = db_operation.get_user_info(tables[4], username)
+                    teacher_user = userinterfacing.TeacherInterface(teacher_info[1], teacher_info[2],
                                                                    teacher_info[3], teacher_info[4],
-                                                                   teacher_info[5])
+                                                                   teacher_info[5], self._LoginInterface__teacher_id,
+                                                                   self._LoginInterface__administrator_id)
                     if type(teacher_user) == None:
                         break
                 break
@@ -197,8 +206,8 @@ class TeacherLoginInterface(LoginInterface):
         return False
 
 class StudentLoginInterface(LoginInterface):
-    def __init__(self, fname, lname, username, email, password):
-        super().__init__(fname, lname, username, email, password)
+    def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
+        super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
     def login(self, username, pwd):
         print("\n   < Go Back (Enter 0) \t\t || Student Login Page ||" + \
@@ -229,8 +238,8 @@ class StudentLoginInterface(LoginInterface):
 
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
-                    student_info = db_operation.get_user_info(tables[0], username)
-                    student_user = userinterfaces.StudentInterface(student_info[1], student_info[2],
+                    student_info = db_operation.get_user_info(tables[2], username)
+                    student_user = userinterfacing.StudentInterface(student_info[1], student_info[2],
                                                                    student_info[3], student_info[4],
                                                                    student_info[5])
                     if type(student_user) == None:
@@ -248,8 +257,8 @@ class RegisterInterface(ABC):
         pass
     
 class TeacherRegisterInterface(RegisterInterface, LoginInterface):
-    def __init__(self, fname = "", lname = "", username = "", email = "", password = ""):
-        super().__init__(fname, lname, username, email, password)
+    def __init__(self, fname = "", lname = "", username = "", email = "", password = "", teacher_id = "", administrator_id = ""):
+        super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
     def user_register(self):
         print("\n   < Go Back (Enter 0) \t\t || Teacher Registration Page ||" + \
@@ -310,8 +319,8 @@ class TeacherRegisterInterface(RegisterInterface, LoginInterface):
         return False
 
 class StudentRegisterInterface(RegisterInterface, LoginInterface):
-    def __init__(self, fname = "", lname = "", username = "", email = "", password = ""):
-        super().__init__(fname, lname, username, email, password)
+    def __init__(self, fname = "", lname = "", username = "", email = "", password = "", teacher_id = "", administrator_id = ""):
+        super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
     def user_register(self):
         print("\n   < Go Back (Enter 0) \t\t || Student Registration Page ||" + \
@@ -429,7 +438,8 @@ def main():
             if user_selection == 1:
                 user_login = LoginInterface(fname="", lname="", 
                                             username="", email="", 
-                                            password="")
+                                            password="", teacher_id="",
+                                            administrator_id="")
                 user_login.selection()
             elif user_selection == 2:
                 raise SystemExit
@@ -452,8 +462,13 @@ if __name__ == "__main__":
         util = Utilities()
 
         create_tables = sqldb.CreateRegisterTables()
+
         create_tables.student_register_table()
         create_tables.teacher_register_table()
+        create_tables.classroom_table()
+
+        create_tables.student_classroom_tables()
+        create_tables.teacher_classroom_tables()
 
         connection_attempt = util.connect_to_db()
 
