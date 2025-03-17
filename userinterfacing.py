@@ -3,7 +3,9 @@ import sqldb
 import datetime
 import help_module
 import time
+import pathlib
 
+from prettytable import PrettyTable
 from abc import ABC, abstractmethod
 
 class Interface(ABC, main.LoginInterface):
@@ -51,6 +53,10 @@ class Interface(ABC, main.LoginInterface):
     
     def get_admin_id(self):
         return self._LoginInterface__administrator_id
+    
+    def get_table(self, teacher_id, classroom_name):
+        table_op = sqldb.UserOperations()
+        return table_op.show_students(teacher_id, classroom_name)
 
     @abstractmethod
     def account_information(self):
@@ -101,9 +107,6 @@ class TeacherInterface(Interface):
                     help_module.__doc__
 
                 elif self.teacher_selection == 4:
-                    break
-
-                elif self.teacher_selection == 5:
                     while True:
                         try:
                             exit_selection = input("Are you sure you want to log out? (Y/N): ")
@@ -145,10 +148,25 @@ class TeacherInterface(Interface):
                 print(err)
 
             return False
+    
+    def print_student_info(self, student_info):
+        student_info = student_info[0:5]
+        print("")
+
+        for i in range(len(student_info)):
+            fields = ["Student ID", "First Name", "Last Name",
+                        "Username", "Student Email"]
+            
+            print(f"{fields[i]}: {student_info[i]}")
+
+        input("Enter anything to continue... ")
+        return True
         
     def class_details(self):
         teacher_uid = self.get_teacher_id()
         class_lst = []
+        student_info = []
+        table_header = PrettyTable()
 
         while True:
             try:
@@ -158,8 +176,18 @@ class TeacherInterface(Interface):
                 if not classroom_check or type(classroom_check) == None:
                     print("You are not assigned to any classroom(s)!")
                     time.sleep(0.5)
+                    
+                    while True:
+                        create_select = input("Would you like to create one? (Y/N): ")
 
-                    self.add_classroom()
+                        if create_select.lower() == "y":
+                            self.add_classroom()
+                            break
+                        elif create_select.lower() == "n":
+                            break
+                        else:
+                            print("Select a valid value! \n")
+                            continue
                     break
                 
                 elif classroom_check:
@@ -183,32 +211,132 @@ class TeacherInterface(Interface):
 
                             if (course_select > 0) and (course_select <= len(class_lst)):
                                 op = sqldb.UserOperations()
-                                show = op.show_students(teacher_uid, class_lst[ind])
 
-                                if show or not show:
-                                    add_input = input("\nWould you like to add more students? (Y/N): ")
+                                while True:
+                                    table_header.field_names = [class_lst[ind]]
+                                    print(f"\n\n{table_header}")
 
-                                    if add_input.lower() == "y":
-                                        add_students = sqldb.UserOperations()
+                                    self.get_table(teacher_uid, class_lst[ind])
+                                    cls_id = op.get_classroom_id(class_lst[ind], teacher_uid)
 
-                                        student_id = int(input("Enter the student's ID: "))
-                                        course_id = int(input("Enter the course ID: "))
+                                    try:
+                                        class_options = {
+                                            1: "View Student Information",
+                                            2: "Add Students",
+                                            3: "Remove Students",
+                                            4: "Save Classroom Information",
+                                            5: "Go Back"
+                                        }
 
-                                        add_students.add_student(student_id, course_id)
+                                        print("")
+                                        for k, v in class_options.items():
+                                            print(f"{k} - {v}")
+                                        individual_class_select = int(input("\nEnter an option: "))
 
-                                        if not add_students or type(add_students) == None:
-                                            print(f"Adding Student of (UID: {student_id})" +
-                                                    " to Course of (ID: {course_id}) was unsuccessful. \n")
+                                    except ValueError:
+                                        print("Please select a valid value. \n")
+                                        continue
+
+                                    if individual_class_select == 1:
+                                        student_id = input("Enter the student ID: ")
+                                        check_existing = op.student_exists_in_class(student_id, cls_id)
+
+                                        if check_existing:
+                                            pass
                                         else:
-                                            print(f"Adding Student of (UID: {student_id})" +
-                                                    f" to Course of (ID: {course_id}) was successful! \n")
-                                            
-                                    elif add_input.lower() == "n":
-                                        break
+                                            print(f"The student with (ID: {student_id}) is not in this class! \n")
+                                            continue
 
-                                elif type(show) == None:
-                                    print("Unfortunately, trying to view the student table went wrong!")
-                                    break
+                                        view_info = op.student_id_exists(student_id)
+
+                                        for i in view_info:
+                                            student_info.append(i)
+                                        self.print_student_info(student_info)
+                                        student_info.clear()
+                                    
+                                    elif individual_class_select == 2:
+                                        while True:
+                                            add_input = input("Would you like to add more students? (Y/N): ")
+
+                                            if add_input.lower() == "y":
+                                                student_id = int(input("Enter the student's ID: "))
+                                                op.add_student(student_id, cls_id)
+
+                                                if not op or type(op) == None:
+                                                    print(f"Adding Student of (ID: {student_id})" +
+                                                            f" to Course of (ID: {cls_id}) was unsuccessful. \n")
+                                                else:
+                                                    print(f"Adding Student of (ID: {student_id})" +
+                                                            f" to Course of (ID: {cls_id}) was successful! \n")
+
+                                            elif add_input.lower() == "n":
+                                                break
+                                            else:
+                                                print("Select a valid option. \n")
+                                                continue
+
+                                    elif individual_class_select == 3:
+                                        while True:
+                                            remove_input = input("\nWould you like to remove students? (Y/N): ")
+
+                                            if remove_input.lower() == "y":
+                                                remove_students = sqldb.UserOperations()
+
+                                                student_id = int(input("Enter the student's ID: "))
+                                                check_existing = op.student_exists_in_class(student_id, cls_id)
+
+                                                if check_existing:
+                                                    pass
+                                                else:
+                                                    print(f"The student with (ID: {student_id}) is not in this class! \n")
+                                                    continue
+
+                                                remove_students.remove_student(student_id, cls_id)
+
+                                                if not remove_students or type(remove_students) == None:
+                                                    print(f"Removing Student of (ID: {student_id})" +
+                                                            f" from Course of (ID: {cls_id}) was unsuccessful. \n")
+                                                else:
+                                                    print(f"Removing Student of (ID: {student_id})" +
+                                                            f" from Course of (ID: {cls_id}) was successful! \n")
+
+                                            elif remove_input.lower() == "n":
+                                                break
+                                            else:
+                                                print("Select a valid option. \n")
+                                                continue
+
+                                    elif individual_class_select == 4:
+                                        save_input = input("\nWould you like to save classroom information? (Y/N): ")
+
+                                        if save_input.lower() == "y":
+                                            DOWNLOAD_DIRECTORY = pathlib.Path.home()/'Downloads'
+                                            save_file = input("Enter a file name: ")
+
+                                            with open(f"{DOWNLOAD_DIRECTORY}\\{save_file}.txt", "w", encoding="utf-8") as userfile:
+                                                print("Clearing any data before handling...")
+                                                userfile.write("")
+                                            
+                                            with open(f"{DOWNLOAD_DIRECTORY}\\{save_file}.txt", "w", encoding="utf-8") as userfile:
+                                                userfile.write(str(op.show_students(teacher_uid, class_lst[ind])))
+
+                                                print(f"Writing to {pathlib.Path.home()/'Downloads'}...")
+                                                time.sleep(1)
+
+                                                print("Write to file successful. \n")
+                                                time.sleep(1)
+                                                continue
+
+                                        elif save_input.lower() == "n":
+                                            pass
+
+                                    elif individual_class_select == 5:
+                                        exit_input = input("\nAre you sure you want to exit? (Y/N): ")
+
+                                        if exit_input.lower() == "y":
+                                            break
+                                        elif exit_input.lower() == "n":
+                                            continue
 
                             else:
                                 print("Please select something in range! \n")
@@ -216,18 +344,24 @@ class TeacherInterface(Interface):
                     
                         except ValueError as val_err:
                             print("Did you select the right value?")
-                            print(err)
+                            print(val_err)
                             continue
+
                         except Exception as err:
                             print("Course Selection Error")
                             print(err)
                             break
 
+                    else:
+                        print("Please select a valid option. \n")
+                        class_lst.clear()
+                        continue
+
             except ValueError:
                 print("Are you sure you entered the right values? \n")
                 continue
+
             except Exception as err:
-                print("MAN")
                 print(err)
                 time.sleep(0.5)
 
@@ -237,15 +371,19 @@ class TeacherInterface(Interface):
         pass
 
     def account_information(self):
-        print("----------- Account Information -----------")
-        print(f"\nFirst Name: {self.get_fname()}")
-        print(f"Last Name: {self.get_lname()}\n")
+        information_table = PrettyTable()
 
-        print(f"Username: {self.get_username()}")
-        print(f"Email Address: {self.get_email()}")
-        print(f"Employee ID: {self.get_teacher_id()}")
-        print(f"Password: {self.get_password()} \n")
+        information_table.field_names = ["First Name", "Last Name", 
+                                         "Username", "Email Address", 
+                                         "Employee ID", "Password"]
+        information_table.add_row([
+            self.get_fname(), self.get_lname(),
+            self.get_username(), self.get_email(),
+            self.get_teacher_id(), self.get_password()
+        ])
 
+        print(information_table)
+        input("Enter anything to continue... ")
         return
     
     def help_page(self):

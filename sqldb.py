@@ -62,6 +62,7 @@ class DBOperations(ConnectSQLDatabase):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
 
+    # This is only for main.py's login/register screen.
     def get_user_info(self, table_name, username):
         table_list = ["teachers", "students"]
 
@@ -84,30 +85,52 @@ class DBOperations(ConnectSQLDatabase):
                 print(err)
                 return None
     
+    def student_exists_in_class(self, student_id, classroom_id):
+        try:
+            check_query = """SELECT * FROM student_classroom WHERE StudentID = %s AND ClassroomID = %s"""
+            student_id_val = student_id
+            classroom_id_val = classroom_id
+
+            self.db_cursor.execute(check_query, (student_id_val, classroom_id_val,))
+            existing = self.db_cursor.fetchone()
+
+            if type(existing) == None:
+                print(f"The student with (ID: {student_id}) is not in this class.")
+            else:
+                return True
+
+        except Exception:
+            print("Something went wrong checking class for student...")
+    
     def student_id_exists(self, student_id):
-        # Check if the student ID exists, otherwise goes against the foreign key constraint
-        check_query = """SELECT * FROM students WHERE StudentID = %s"""
-        id_val = student_id
-        self.db_cursor.execute(check_query, (id_val,))
+        try:
+            # Check if the student ID exists, otherwise goes against the foreign key constraint
+            check_query = """SELECT * FROM students WHERE StudentID = %s"""
+            id_val = student_id
+            self.db_cursor.execute(check_query, (id_val,))
 
-        existing = self.db_cursor.fetchone()
+            existing = self.db_cursor.fetchone()
 
-        if type(existing) == None:
-            print(f"The student with (ID: {student_id}) does not exist.")
-        else:
-            return True
+            if type(existing) == None:
+                print(f"The student with (ID: {student_id}) does not exist.")
+            else:
+                return True
             
+        except Exception:
+            print("Something went wrong checking student IDs...")
+
+        finally:
+            return existing
+        
     def get_classroom_id(self, course, teacher_id):
         try:
-            print(course, teacher_id)
-
             id_query = """SELECT ClassroomID FROM classrooms WHERE CourseName = %s and TeacherID = %s"""
             self.db_cursor.execute(id_query, (course, teacher_id))
 
             fetch_query = self.db_cursor.fetchone()
             return fetch_query[0]
 
-        except Exception as err:
+        except Exception:
             return None
 
     def get_table_names(self):
@@ -139,9 +162,11 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
             student_table = PrettyTable()
 
             show_query = """ 
-            SELECT teachers.TeacherID AS teacher_id,
-                    students.StudentID AS student_id,
-                    classrooms.ClassroomID AS classroom_id
+            SELECT teachers.TeacherID AS TEACHER_ID,
+                    students.FirstName AS STUDENT_FIRST_NAME,
+                    students.LastName AS STUDENT_LAST_NAME,
+                    students.StudentID AS STUDENT_ID,
+                    classrooms.ClassroomID AS CLASSROOM_ID
             FROM students
             INNER JOIN student_classroom ON students.StudentID = student_classroom.StudentID
             INNER JOIN classrooms ON student_classroom.ClassroomID = classrooms.ClassroomID
@@ -151,7 +176,9 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
             """
 
             self.db_cursor.execute(show_query, (teacher_id, classroom_name))
+
             student_table = from_db_cursor(self.db_cursor)
+
             query_res = self.db_cursor.fetchall()
 
             if query_res:
@@ -164,22 +191,26 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
         except Exception as err:
             print("Unfortunately, trying to view the student table went wrong!")
             print(err)
+
+        finally:
+            return str(student_table)
             
     def add_student(self, student_id, class_id):
         try:
             exists = DBOperations()
-            exists.student_id_exists(student_id)
+            student_exists = exists.student_id_exists(student_id)
 
-            if exists:
+            if type(student_exists) == None:
+                print("Student does not exist... \n")
+
+            if student_exists:
                 insert_query = """ 
                 INSERT INTO student_classroom(StudentID, ClassroomID) VALUES(%s, %s)
                 """
 
                 self.db_cursor.execute(insert_query, (int(student_id), int(class_id)))
                 self.sql_serv.commit()
-
                 return True
-            
             else:
                 print('womp')
                 return False
@@ -187,8 +218,23 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
         except Exception as err:
             print("\n-- Adding Student Error")
             print("Something went wrong trying to add students!")
+            print("Are you sure that the student and/or class IDs exist?")
+            return False
+        
+    def remove_student(self, student_id, classroom_id):
+        try:
+            remove_query = """
+            DELETE FROM student_classroom WHERE StudentID = %s AND ClassroomID = %s
+            """
+            student_id_val = student_id
+            classroom_id_val = classroom_id
+
+            self.db_cursor.execute(remove_query, (student_id_val, classroom_id_val,))
+            self.sql_serv.commit()
+            return True
+        
+        except Exception as err:
             print(err)
-            pass
 
     def assign_teacher(self, teacher_id, class_id):
         try:
@@ -449,8 +495,13 @@ class CreateRegisterTables(ConnectSQLDatabase):
                 """CREATE TABLE student_classroom( 
                 StudentID int NOT NULL,
                 ClassroomID int NOT NULL,
-                FOREIGN KEY(StudentID) REFERENCES students(StudentID),
-                FOREIGN KEY(ClassroomID) REFERENCES classrooms(ClassroomID))
+                FOREIGN KEY(StudentID) 
+                    REFERENCES students(StudentID)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(ClassroomID) 
+                    REFERENCES classrooms(ClassroomID)
+                    ON DELETE CASCADE
+                )
                 """
             )
 
@@ -486,8 +537,13 @@ class CreateRegisterTables(ConnectSQLDatabase):
                 """CREATE TABLE teacher_classroom( 
                 TeacherID int NOT NULL, 
                 ClassroomID int NOT NULL,
-                FOREIGN KEY(TeacherID) REFERENCES teachers(TeacherID),
-                FOREIGN KEY(ClassroomID) REFERENCES classrooms(ClassroomID))
+                FOREIGN KEY(TeacherID) 
+                    REFERENCES teachers(TeacherID)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(ClassroomID) 
+                    REFERENCES classrooms(ClassroomID)
+                    ON DELETE CASCADE
+                )
                 """
             )
 
@@ -581,6 +637,11 @@ class RegisterPerson(ConnectSQLDatabase):
 
     def register_teacher(self, fname, lname, username, email, password):
         try:
+            info = {
+                "Username: ": username,
+                "Email: ": email,
+                "Password: ": password
+            }
 
             register_query = """INSERT INTO teachers(FirstName, LastName, UserName, EmailAddress, Password) 
                                 VALUES (%s, %s, %s, %s, %s)"""
@@ -592,10 +653,14 @@ class RegisterPerson(ConnectSQLDatabase):
             self.db_cursor.execute(check_individual, (individual_val,))
             res = self.db_cursor.fetchone()
 
+            print("\n\n** Please save this information if needed. **")
+            for k, v in info.items():
+                print(f"{k} {v}")
+            print("\n\n")
+
             if res:
                 print("The username already exists!")
                 return True
-
             else:
                 self.db_cursor.execute(register_query, register_val)
                 self.sql_serv.commit()
@@ -607,6 +672,12 @@ class RegisterPerson(ConnectSQLDatabase):
 
     def register_student(self, fname, lname, username, email, password):
         try:
+            info = {
+                "Username: ": username,
+                "Email: ": email,
+                "Password: ": password
+            }
+
             register_query = """INSERT INTO students(FirstName, LastName, UserName, EmailAddress, Password) 
                                 VALUES (%s, %s, %s, %s, %s)"""
             register_val = (fname, lname, username, email, password)
@@ -617,10 +688,14 @@ class RegisterPerson(ConnectSQLDatabase):
             self.db_cursor.execute(check_individual, (individual_val,))
             res = self.db_cursor.fetchone()
 
+            print("\n\n** Please save this information if needed. **")
+            for k, v in info.items():
+                print(f"{k} {v}")
+            print("\n\n")
+
             if res:
                 print("The username already exists!")
                 return True
-
             else:
                 self.db_cursor.execute(register_query, register_val)
                 self.sql_serv.commit()

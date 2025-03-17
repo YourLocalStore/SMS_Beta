@@ -73,7 +73,8 @@ class LoginInterface():
                 elif user_selection == 2:
                     student_login = StudentLoginInterface(self.__fname, self.__lname, 
                                                           self.username, self.__email,
-                                                          self.__password)
+                                                          self.__password, self.__teacher_id,
+                                                          self.__administrator_id)
                     student_login.login(username="", pwd="")
 
                 elif user_selection == 3:
@@ -368,7 +369,7 @@ class StudentRegisterInterface(RegisterInterface, LoginInterface):
                     
                 # If the user had not been registered
                 elif not check_user:
-                    print(f"{self.username} has Successfully Registered. \n")
+                    print(f"{self.username} has been successfully registered. \n")
                     register_condition = False
                     break
 
