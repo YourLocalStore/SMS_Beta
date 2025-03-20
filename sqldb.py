@@ -21,11 +21,11 @@ class ConnectSQLDatabase:
                 charset = "utf8",
                 use_unicode = True,
 
-                host = "127.0.0.1",
+                host = "LocalComputer",
                 port = "3306",
 
-                user = os.environ.get("USER"),
-                password = os.environ.get("PASSWORD"),
+                user = "guest",
+                password = "ChickenBeagleNoodleSoup4$$$$$@!#",
                 connection_timeout = 300
             )
             self.db_cursor = self.sql_serv.cursor()
@@ -44,6 +44,7 @@ class ConnectSQLDatabase:
 
         except Exception as err:
             print("The database must be down... Please contact the creator!\n")
+            print(err)
             return None
 
     def create_db(self, cursor):
