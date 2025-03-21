@@ -62,6 +62,7 @@ You may watch a [quick installation guide here](https://www.youtube.com/watch?v=
 
 After installing, locate the "+" icon next to ```"MySQL Connections"``` in the ```MySQL Workbench```, then ensure the following settings in ```"Parameters"```:
 ```
+Connection Name - {Enter any name}
 Connection Method - Standard (TCP/IP)
 Hostname - 127.0.0.1
 Port - 3306
