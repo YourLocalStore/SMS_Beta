@@ -461,29 +461,19 @@ if __name__ == "__main__":
 
     try:
         util = Utilities()
+
+        create_tables = sqldb.CreateRegisterTables()
+
+        create_tables.student_register_table()
+        create_tables.teacher_register_table()
+        create_tables.classroom_table()
+
+        create_tables.student_classroom_tables()
+        create_tables.teacher_classroom_tables()
+
         connection_attempt = util.connect_to_db()
 
-        # create_tables = sqldb.CreateRegisterTables()
-
-        # create_tables.student_register_table()
-        # create_tables.teacher_register_table()
-        # create_tables.classroom_table()
-
-        # create_tables.student_classroom_tables()
-        # create_tables.teacher_classroom_tables()
-
-        #connection_attempt = util.connect_to_db()
-
         if connection_attempt:
-            create_tables = sqldb.CreateRegisterTables()
-
-            create_tables.student_register_table()
-            create_tables.teacher_register_table()
-            create_tables.classroom_table()
-
-            create_tables.student_classroom_tables()
-            create_tables.teacher_classroom_tables()
-
             main()
 
     except AttributeError as attr_err:

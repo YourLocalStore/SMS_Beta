@@ -21,11 +21,11 @@ class ConnectSQLDatabase:
                 charset = "utf8",
                 use_unicode = True,
 
-                host = "LocalComputer",
+                host = "127.0.0.1",
                 port = "3306",
 
-                user = "guest",
-                password = "ChickenBeagleNoodleSoup4$$$$$@!#",
+                user = "root",
+                password = "ENTER YOUR DB PASSWORD HERE",
                 connection_timeout = 300
             )
             self.db_cursor = self.sql_serv.cursor()
@@ -732,7 +732,7 @@ class CheckDBState(DBOperations):
     
     @staticmethod
     def try_connection():
-        connect_db = ConnectSQLDatabase()
+        pass
 
 def main():
     pass
