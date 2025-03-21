@@ -60,10 +60,13 @@ so in ```sqldb.py```, there exists ```ConnectSQLDatabase```.
 instead of following the steps below (where you need to install stuff), here's a quicker way:
 in ```__init__```, set the following attributes:
 1. host = "localhost"
+2. port = nothing (comment this out)
 2. user = "root"
 3. password = "just use anything"
 
-then save the ```sqldb.py``` file, then run ```main.py```
+please ensure to comment out ```load_dotenv()``` because there's no env variables to use
+
+save the ```sqldb.py``` file, then run ```main.py```
 
 
 # --------------- DO NOT FOLLOW (below) ---------------#
