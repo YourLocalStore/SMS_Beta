@@ -1,7 +1,9 @@
 import sqldb
-import userinterfacing
 import visuals.titlescreen as titlescreen
 import time
+import sys, os
+
+import logininterfaces.interfacing as interfacing
 
 from abc import ABC, abstractmethod
 from threading import Thread
@@ -142,10 +144,10 @@ class AdminLoginInterface(LoginInterface):
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
                     admin_info = db_operation.get_user_info(tables[0], username)
-                    admin_user = userinterfacing.AdminInterface(admin_info[1], admin_info[2],
-                                                                admin_info[3], admin_info[4],
-                                                                admin_info[5], self._LoginInterface__teacher_id,
-                                                                self._LoginInterface__administrator_id)
+                    admin_user = interfacing.AdminInterface(admin_info[1], admin_info[2],
+                                                            admin_info[3], admin_info[4],
+                                                            admin_info[5], self._LoginInterface__teacher_id,
+                                                            self._LoginInterface__administrator_id)
                     if type(admin_user) == None:
                         break
                 break
@@ -193,10 +195,10 @@ class TeacherLoginInterface(LoginInterface):
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
                     teacher_info = db_operation.get_user_info(tables[4], username)
-                    teacher_user = userinterfacing.TeacherInterface(teacher_info[1], teacher_info[2],
-                                                                   teacher_info[3], teacher_info[4],
-                                                                   teacher_info[5], self._LoginInterface__teacher_id,
-                                                                   self._LoginInterface__administrator_id)
+                    teacher_user = interfacing.TeacherInterface(teacher_info[1], teacher_info[2],
+                                                                teacher_info[3], teacher_info[4],
+                                                                teacher_info[5], self._LoginInterface__teacher_id,
+                                                                self._LoginInterface__administrator_id)
                     if type(teacher_user) == None:
                         break
                 break
@@ -240,9 +242,10 @@ class StudentLoginInterface(LoginInterface):
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
                     student_info = db_operation.get_user_info(tables[2], username)
-                    student_user = userinterfacing.StudentInterface(student_info[1], student_info[2],
-                                                                   student_info[3], student_info[4],
-                                                                   student_info[5])
+                    student_user = interfacing.StudentInterface(student_info[1], student_info[2],
+                                                                student_info[3], student_info[4],
+                                                                student_info[5], self._LoginInterface__teacher_id,
+                                                                self._LoginInterface__administrator_id)
                     if type(student_user) == None:
                         break
                 break
@@ -453,6 +456,8 @@ def main():
             continue
 
 if __name__ == "__main__":
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     print("\nWelcome to the Student Management System (SMS)!")
     time.sleep(1.5)
 
@@ -463,11 +468,9 @@ if __name__ == "__main__":
         util = Utilities()
 
         create_tables = sqldb.CreateRegisterTables()
-
         create_tables.student_register_table()
         create_tables.teacher_register_table()
         create_tables.classroom_table()
-
         create_tables.student_classroom_tables()
         create_tables.teacher_classroom_tables()
 

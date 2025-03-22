@@ -1,6 +1,6 @@
 import mysql.connector
-import os
 import time
+import configparser
 
 from dotenv import load_dotenv
 from mysql import *
@@ -14,18 +14,24 @@ load_dotenv()
 
 class ConnectSQLDatabase:
     db_name = "tester"
+    config = configparser.ConfigParser()
 
     def __init__(self):
         try:
+            self.config.read_file(open("Credential-Configuration.ini"))
+
+            """
+            ** Note that the host, port, user, and password must be configured to the database credentials.
+               To change these credentials, locate 'Credential-Configuration.ini'.
+            """
+
             self.sql_serv = mysql.connector.connect(
                 charset = "utf8",
                 use_unicode = True,
-
-                host = "127.0.0.1",
-                port = "3306",
-
-                user = "root",
-                password = "ENTER YOUR DB PASSWORD HERE",
+                host = self.config["Credentials"]["Host"],
+                port = self.config["Credentials"]["Port"],
+                user = self.config["Credentials"]["User"],
+                password = self.config["Credentials"]["Password"],
                 connection_timeout = 300
             )
             self.db_cursor = self.sql_serv.cursor()
@@ -160,6 +166,8 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
 
     def show_students(self, teacher_id, classroom_name):
         try:
+
+            print(teacher_id, classroom_name)
             student_table = PrettyTable()
 
             show_query = """ 
@@ -177,9 +185,7 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
             """
 
             self.db_cursor.execute(show_query, (teacher_id, classroom_name))
-
             student_table = from_db_cursor(self.db_cursor)
-
             query_res = self.db_cursor.fetchall()
 
             if query_res:
@@ -732,9 +738,11 @@ class CheckDBState(DBOperations):
     
     @staticmethod
     def try_connection():
+        #obj = ConnectSQLDatabase()
         pass
 
 def main():
+    obj = ConnectSQLDatabase()
     pass
 
 if __name__ == "__main__":
