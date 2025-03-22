@@ -10,7 +10,7 @@ from prettytable import PrettyTable, from_db_cursor
 from abc import ABC, abstractmethod
 from threading import Thread
 
-load_dotenv()
+#load_dotenv()
 
 class ConnectSQLDatabase:
     db_name = "tester"
