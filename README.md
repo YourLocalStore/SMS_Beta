@@ -44,7 +44,7 @@ git clone https://github.com/YourLocalStore/SMS_Beta.git
 ```
 Then, you must install the following packages/libraries by doing the following:
 ```
-pip install mysql-connector
+pip install mysql-connector-python
 pip install python-dotenv
 pip install ptable
 pip install passlib
@@ -62,6 +62,7 @@ You may watch a [quick installation guide here](https://www.youtube.com/watch?v=
 
 After installing, locate the "+" icon next to ```"MySQL Connections"``` in the ```MySQL Workbench```, then ensure the following settings in ```"Parameters"```:
 ```
+Connection Name - {Enter any name}
 Connection Method - Standard (TCP/IP)
 Hostname - 127.0.0.1
 Port - 3306
@@ -76,9 +77,8 @@ In future updates, I'll just setup a config file for the user to change.
 
 1. In ```sqldb.py``` there is a ```ConnectSQLDatabase``` class.
 2. Within ```__init__``` change the ```password``` attribute to the password you used for the installation.
-3. Save the ```sqldb.py``` file.
+3. Save the ```sqldb.py``` file, then run ```main.py```
 
-After all of that, run ```main.py```!
 
 
 
