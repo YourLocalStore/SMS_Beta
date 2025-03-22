@@ -48,6 +48,7 @@ pip install mysql-connector-python
 pip install python-dotenv
 pip install ptable
 pip install passlib
+pip install configparser
 ```
 
 ```Credentials are already provided to you, and the only value you need to change is the password attribute in sqldb.py (see below for more infomation).```
@@ -72,12 +73,9 @@ Username - root
 After that, click "OK", then enter the SQL connection you just made! 
 Make sure that the MySQL Windows service is running ```(Task Manager -> Services -> Search "SQL")```. 
 
-As a further note... In the codebase, there is one value you need to change. This is to ensure the connection is fully met between your database and the connector.
-In future updates, I'll just setup a config file for the user to change.
-
-1. In ```sqldb.py``` there is a ```ConnectSQLDatabase``` class.
-2. Within ```__init__``` change the ```password``` attribute to the password you used for the installation.
-3. Save the ```sqldb.py``` file, then run ```main.py```
+As a further note... There is a config file in the codebase named ```Credential-Configuration.ini```.
+1. In ```Credential-Configuration.ini```, you will need to change the fields according to your database configuration.
+2. Once that is done, Save the ```Credential-Configuration.ini``` file, then run ```main.py```.
 
 
 
