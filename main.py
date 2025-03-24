@@ -221,7 +221,7 @@ class StudentLoginInterface(LoginInterface):
 
         while login_status:
             try:
-                username = input("Enter Your Username: ")
+                username = input("\nEnter Your Username: ")
                 if username == "0":
                     login_status = False
                     break
@@ -245,12 +245,13 @@ class StudentLoginInterface(LoginInterface):
                     student_user = interfacing.StudentInterface(student_info[1], student_info[2],
                                                                 student_info[3], student_info[4],
                                                                 student_info[5], self._LoginInterface__teacher_id,
-                                                                self._LoginInterface__administrator_id)
+                                                                self._LoginInterface__administrator_id, student_info[0])
                     if type(student_user) == None:
                         break
                 break
                     
             except Exception as err:
+                print("\n-- Login Error")
                 print(err)
 
         return False

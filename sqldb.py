@@ -92,6 +92,63 @@ class DBOperations(ConnectSQLDatabase):
                 print(err)
                 return None
     
+    def get_student_class_details(self, student_id):
+        try:
+            class_lst = []
+
+            student_class_id = """SELECT ClassroomID FROM student_classroom WHERE StudentID = %s"""
+            student_id_val = student_id
+
+            self.db_cursor.execute(student_class_id, (student_id_val,))
+            class_ids = self.db_cursor.fetchall()
+
+            for i in range(len(class_ids)):
+                student_class_names = """SELECT CourseName FROM Classrooms WHERE ClassroomID = %s"""
+                class_name_val = class_ids[i]
+
+                self.db_cursor.execute(student_class_names, (class_name_val))
+                class_names = self.db_cursor.fetchall()
+
+                class_lst.append(class_names)
+
+            return class_lst
+        
+        except Exception:
+            pass
+    
+    def get_class_teacher_id(self, student_id, class_name):
+        try:
+            correct_cls_id = ""
+            class_id_query = """SELECT ClassroomID FROM student_classroom WHERE StudentID = %s"""
+            student_id_val = student_id
+
+            self.db_cursor.execute(class_id_query, (student_id_val,))
+            class_ids = self.db_cursor.fetchall()
+
+            for i in range(len(class_ids)):
+                course_name_query = """SELECT CourseName FROM Classrooms WHERE ClassroomID = %s"""
+                class_id_vals = class_ids[i][0]
+
+                self.db_cursor.execute(course_name_query, (class_id_vals,))
+                course = self.db_cursor.fetchone()
+
+                if course[0] == class_name:
+                    class_name = course[0]
+                    correct_cls_id = class_id_vals
+                    break
+
+            teacher_id_query = """SELECT TeacherID FROM Classrooms WHERE ClassroomID = %s AND CourseName = %s"""
+            correct_cls_id_val = correct_cls_id
+            course_name_val = class_name
+
+            self.db_cursor.execute(teacher_id_query, (correct_cls_id_val, course_name_val,))
+            teacher_id = self.db_cursor.fetchone()
+            return teacher_id[0]
+
+        except Exception as err:
+            print("\n-- Teacher ID Error")
+            print(err)
+    
     def student_exists_in_class(self, student_id, classroom_id):
         try:
             check_query = """SELECT * FROM student_classroom WHERE StudentID = %s AND ClassroomID = %s"""
@@ -129,16 +186,30 @@ class DBOperations(ConnectSQLDatabase):
         finally:
             return existing
         
-    def get_classroom_id(self, course, teacher_id):
+    # Teacher Method
+    def get_classroom_id(self, course, teacher_id, section):
         try:
-            id_query = """SELECT ClassroomID FROM classrooms WHERE CourseName = %s and TeacherID = %s"""
-            self.db_cursor.execute(id_query, (course, teacher_id))
+            id_query = """SELECT ClassroomID FROM classrooms WHERE CourseName = %s AND TeacherID = %s AND Section = %s"""
+            self.db_cursor.execute(id_query, (course, teacher_id, section,))
 
             fetch_query = self.db_cursor.fetchone()
             return fetch_query[0]
 
         except Exception:
-            return None
+            return None 
+        
+    def get_classroom_name(self, classroom_id):
+        try:
+            classroom_name_query = """SELECT CourseName FROM Classrooms WHERE ClassroomID = %s"""
+            class_id_val = classroom_id
+
+            self.db_cursor.execute(classroom_name_query, (class_id_val,))
+            class_name = self.db_cursor.fetchone()
+            return class_name
+        
+        except Exception as err:
+            print("-- Classroom Name Error")
+            print(err)
 
     def get_table_names(self):
         table_queries = """SHOW TABLES"""
@@ -164,10 +235,8 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
 
-    def show_students(self, teacher_id, classroom_name):
+    def show_students(self, teacher_id, classroom_name, class_id):
         try:
-
-            print(teacher_id, classroom_name)
             student_table = PrettyTable()
 
             show_query = """ 
@@ -181,10 +250,10 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
             INNER JOIN classrooms ON student_classroom.ClassroomID = classrooms.ClassroomID
             INNER JOIN teacher_classroom ON classrooms.ClassroomID = teacher_classroom.ClassroomID
             INNER JOIN teachers ON teacher_classroom.TeacherID = teachers.TeacherID
-            WHERE teachers.TeacherID = %s AND classrooms.CourseName = %s;
+            WHERE teachers.TeacherID = %s AND classrooms.CourseName = %s AND classrooms.ClassroomID = %s;
             """
 
-            self.db_cursor.execute(show_query, (teacher_id, classroom_name))
+            self.db_cursor.execute(show_query, (teacher_id, classroom_name, class_id))
             student_table = from_db_cursor(self.db_cursor)
             query_res = self.db_cursor.fetchall()
 
@@ -206,18 +275,41 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
         try:
             exists = DBOperations()
             student_exists = exists.student_id_exists(student_id)
+            student_classes = []
 
             if type(student_exists) == None:
                 print("Student does not exist... \n")
 
             if student_exists:
-                insert_query = """ 
-                INSERT INTO student_classroom(StudentID, ClassroomID) VALUES(%s, %s)
-                """
+                class_id_query = """SELECT ClassroomID FROM student_classroom WHERE StudentID = %s"""
+                self.db_cursor.execute(class_id_query, (student_id,))
+                class_ids = self.db_cursor.fetchall()
+                
+                if len(class_ids) > 0 or type(class_ids) != None:
+                    for i in range(len(class_ids)):
+                        if class_id in class_ids[0]:
+                            print("This user is already in your class! \n")
+                            return None
+                        
+                    for i in range(len(class_ids)):
+                        class_name_query = """SELECT CourseName FROM Classrooms WHERE ClassroomID = %s"""
+                        self.db_cursor.execute(class_name_query, (class_ids[i][0],))
+                        names = self.db_cursor.fetchone()
+                        student_classes.append(names[0])
 
-                self.db_cursor.execute(insert_query, (int(student_id), int(class_id)))
+                    class_name_query = """SELECT CourseName FROM Classrooms WHERE ClassroomID = %s"""
+                    self.db_cursor.execute(class_name_query, (class_id,))
+                    current_class_name = self.db_cursor.fetchone()[0]
+
+                    if current_class_name in student_classes:
+                        print("\n==== This student is already registered for the same class! ====")
+                        return None
+                
+                insert_query = """INSERT INTO student_classroom(StudentID, ClassroomID) VALUES(%s, %s)"""
+                self.db_cursor.execute(insert_query, (student_id, class_id,))
                 self.sql_serv.commit()
                 return True
+            
             else:
                 print('womp')
                 return False
@@ -226,6 +318,7 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
             print("\n-- Adding Student Error")
             print("Something went wrong trying to add students!")
             print("Are you sure that the student and/or class IDs exist?")
+            print(err)
             return False
         
     def remove_student(self, student_id, classroom_id):
@@ -477,6 +570,7 @@ class CreateRegisterTables(ConnectSQLDatabase):
                 TeacherID int NOT NULL,
                 Grade int NOT NULL,
                 CourseName TEXT NOT NULL, 
+                Section int NOT NULL DEFAULT 1,
                 PRIMARY KEY(ClassroomID))"""
             )
 
@@ -507,8 +601,7 @@ class CreateRegisterTables(ConnectSQLDatabase):
                     ON DELETE CASCADE,
                 FOREIGN KEY(ClassroomID) 
                     REFERENCES classrooms(ClassroomID)
-                    ON DELETE CASCADE
-                )
+                    ON DELETE CASCADE)
                 """
             )
 
@@ -549,8 +642,7 @@ class CreateRegisterTables(ConnectSQLDatabase):
                     ON DELETE CASCADE,
                 FOREIGN KEY(ClassroomID) 
                     REFERENCES classrooms(ClassroomID)
-                    ON DELETE CASCADE
-                )
+                    ON DELETE CASCADE)
                 """
             )
 
@@ -586,7 +678,7 @@ class RegisterClassrooms(DBOperations, ConnectSQLDatabase):
 
     def check_classroom_table(self, employee_id):
         try:
-            print("Checking for your classrooms... \n")
+            #print("Checking for your classrooms... \n")
 
             check_query = """SELECT * FROM classrooms WHERE TeacherID = %s"""
             id_val = int(employee_id)
@@ -606,10 +698,25 @@ class RegisterClassrooms(DBOperations, ConnectSQLDatabase):
 
     def create_classroom(self, class_name, teacher_id, yr):
         try:
-            create_query = """INSERT INTO classrooms(TeacherID, CourseName, Grade) VALUES (%s, %s, %s)"""
-            vals = teacher_id, class_name, yr
+            count_query = """SELECT COUNT(*) as Section_Count
+                             FROM Classrooms
+                             WHERE CourseName = %s"""
+            self.db_cursor.execute(count_query, (class_name,))
+            count_greater_than_zero = self.db_cursor.fetchone()[0] > 0 # Check the count
+
+            if count_greater_than_zero:
+                max_section_query = """SELECT MAX(Section) FROM Classrooms WHERE CourseName = %s"""
+                self.db_cursor.execute(max_section_query, (class_name,))
+                max_section = self.db_cursor.fetchone()[0]
+                new_section = max_section + 1
+
+            create_query = """INSERT INTO classrooms(TeacherID, CourseName, Grade, Section) 
+                              VALUES (%s, %s, %s, %s)"""
+            vals = teacher_id, class_name, yr, new_section
             self.db_cursor.execute(create_query, vals)
+
             self.sql_serv.commit()
+            return new_section
             
         except Exception as err:
             print("WHAT")

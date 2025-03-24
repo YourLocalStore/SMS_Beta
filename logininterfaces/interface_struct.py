@@ -50,9 +50,9 @@ class Interface(ABC, LoginInterface):
     def get_admin_id(self):
         return self._LoginInterface__administrator_id
     
-    def get_table(self, teacher_id, classroom_name):
+    def get_table(self, teacher_id, classroom_name, class_id):
         table_op = UserOperations()
-        return table_op.show_students(teacher_id, classroom_name)
+        return table_op.show_students(teacher_id, classroom_name, class_id) 
 
     @abstractmethod
     def account_information(self):

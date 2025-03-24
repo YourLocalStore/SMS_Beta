@@ -11,6 +11,7 @@ from classroom_util.download_class_info import DownloadClass
 from classroom_util.add_students import AddStudent
 from classroom_util.remove_students import RemoveStudents
 from account_util.get_account_info import GetUserInformation
+from account_util.update_account_info import UpdateInfo
 from prettytable import PrettyTable
 
 
@@ -22,17 +23,17 @@ class TeacherInterface(Interface):
         self.classroom_year = ""
 
         while True:
-            print("\n------------- Student Management System V1.0.0 ------------- \n" +
+            print("\n============= Student Management System V1.0.0 ============= \n" +
               "############################################################")
-            print(f"{self.date_today.strftime('%A')}, {self.date_today.strftime('%B')}" +
+            print(f"\n{self.date_today.strftime('%A')}, {self.date_today.strftime('%B')}" +
               f" {self.date_today.strftime('%Y')}\n")
             print(f"Welcome to the SMS, {fname.title()}!\n")
 
             try:
                 self.selection = {
                                 1: "Manage and View Classrooms",
-                                2: "Account Information",
-                                3: "Help",
+                                2: "View Account Information",
+                                3: "Update Account Information",
                                 4: "Log-out"
                             }
                 
@@ -48,7 +49,7 @@ class TeacherInterface(Interface):
                     self.account_information()
 
                 elif self.teacher_selection == 3:
-                    help_module.__doc__
+                    self.update_account_information()
 
                 elif self.teacher_selection == 4:
                     while True:
@@ -60,7 +61,7 @@ class TeacherInterface(Interface):
                                 return None   
                             elif exit_selection.lower() == "n":
                                 break
-
+                            
                         except Exception:
                             print("Please enter a valid value. \n")
                             continue
@@ -71,9 +72,12 @@ class TeacherInterface(Interface):
         
     def class_details(self):
         teacher_uid = self.get_teacher_id()
-        class_lst = []
-        student_info = []
         table_header = PrettyTable()
+
+        class_lst = []
+        section_lst = []
+        class_id_lst = []
+        student_info = []
 
         while True:
             try:
@@ -101,9 +105,12 @@ class TeacherInterface(Interface):
                     print(f"Found {len(classroom_check)} Course(s). \n")
 
                     for i in range(len(classroom_check)):
+                        class_id_lst.append(classroom_check[i][0])
                         class_lst.append(classroom_check[i][3])
+                        section_lst.append(classroom_check[i][4])
+
                     for num, course in enumerate(class_lst, start=1):
-                        print(f"{num} - {course}")
+                        print(f"{num} - {course} (Section {section_lst[num - 1]}) (ID {class_id_lst[num - 1]})")
 
                     add_input = input("\nWould you like to add more classrooms? (Y/N): ")
 
@@ -121,9 +128,9 @@ class TeacherInterface(Interface):
                                 while True:
                                     table_header.field_names = [class_lst[ind]]
                                     print(f"\n\n{table_header}")
-                                    self.get_table(teacher_uid, class_lst[ind])
 
-                                    cls_id = op.get_classroom_id(class_lst[ind], teacher_uid)
+                                    self.get_table(teacher_uid, class_lst[ind], class_id_lst[ind])
+                                    cls_id = op.get_classroom_id(class_lst[ind], teacher_uid, section_lst[ind])
 
                                     try:
                                         class_options = {
@@ -136,7 +143,7 @@ class TeacherInterface(Interface):
 
                                         print("")
                                         for k, v in class_options.items():
-                                            print(f"{k} - {v}")
+                                            print(f"\t{k}: {v}")
                                         individual_class_select = int(input("\nEnter an option: "))
 
                                     except ValueError:
@@ -240,68 +247,72 @@ class TeacherInterface(Interface):
         student_info = student_info[0:5]
         student_info_op = PrintInformation(student_info)
         student_info_op.print_student()
-        
-    def student_details(self):
-        pass
 
     def account_information(self):
-        account_info = GetUserInformation(self.getfname(), self.getlname(),
-                                          self.get_username(), self.get_teacher_id(),
-                                          self.get_password())
+        print("\nViewing account details...\n")
+        account_info = GetUserInformation(self.get_fname(), self.get_lname(),
+                                          self.get_username(), self.get_email(),
+                                          self.get_teacher_id(), self.get_password())
         print(account_info)
-        input("Enter anything to continue... ")
+        input("\nEnter anything to continue... ")
         return
     
-    def help_page(self):
-        print(help_module.__doc__)
-        return None
+    def update_account_information(self):
+        upd_info = UpdateInfo(self.get_teacher_id(), self.get_username(),
+                              self.get_email(), self.get_password(), 
+                              role="Teacher")
+        upd_info.update_menu()
+
+    def student_details(self):
+        pass
 
 class AdminInterface(Interface):
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
 class StudentInterface(Interface):
-    def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
-        super(self.Interface, self).__init__(fname, lname, username, email, password, teacher_id, administrator_id)
+    def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id, student_id):
+        super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
+        self._student_id = student_id
 
         while True:
             print("\n------------- Student Management System V1.0.0 ------------- \n" +
               "############################################################")
-            print(f"{self.date_today.strftime('%A')}, {self.date_today.strftime('%B')}" +
+            print(f"\n{self.date_today.strftime('%A')}, {self.date_today.strftime('%B')}" +
               f" {self.date_today.strftime('%Y')}\n")
             print(f"Welcome to the SMS, {fname.title()}!\n")
 
             try:
                 self.selection = {
-                                1: "View Classrooms",
-                                2: "View Student Details",
-                                3: "Account Information",
-                                4: "Help",
-                                5: "Log-out"
+                                1: "View Your Courses",
+                                2: "View Account Information",
+                                3: "Update Account Information",
+                                4: "Log-out"
                             }
                 
                 for k,v in self.selection.items():
                     print(f"\t{k}: {v}")
 
+                print("")
                 self.student_selection = int(input("Enter an Option: "))
 
                 if self.student_selection == 1:
                     class_info = self.class_details()
+                    
                 elif self.student_selection == 2:
-                    student_info = self.student_details()
-                elif self.student_selection == 3:
                     own_info = self.account_information()
+
+                elif self.student_selection == 3:
+                    get_help = self.update_account_information()
+
                 elif self.student_selection == 4:
-                    get_help = self.help_page()
-                elif self.student_selection == 5:
                     while True:
                         try:
-                            exit_selection = input("Are you sure you want to log out? (Y/N): \n")
+                            exit_selection = input("\nAre you sure you want to log out? (Y/N): ")
 
                             if exit_selection.lower() == "y":
                                 print("Logging out...")
                                 return
-                            
                             elif exit_selection.lower() == "n":
                                 break
 
@@ -314,19 +325,59 @@ class StudentInterface(Interface):
                 continue
 
     def class_details(self):
-        pass
+        class_check_op = sqldb.DBOperations()
+        check_teacher_classrooms = sqldb.RegisterClassrooms()
+        result = class_check_op.get_student_class_details(self._student_id)
+
+        if not result or type(result) == None:
+            return "You are not assigned to any classrooms yet. \n"
+        
+        elif result:
+            while True:
+                print(f"Found {len(result)} Course(s). \n")
+                for i in range(len(result)):
+                    result[i] = result[i][0][0]
+                for num, course in enumerate(result, start=1):
+                    print(f"{num} - {course}")
+
+                while True:
+                    try:
+                        course_select = int(input("Select the course to view: "))
+                        ind = course_select - 1 
+                    
+                        if (course_select > 0) and (course_select <= len(result)):
+                            teacher_id = class_check_op.get_class_teacher_id(self._student_id, result[ind])
+                            check_teacher_classrooms.check_classroom_table(teacher_id)
+                            
+                            self.view_classroom(teacher_id, result[ind])
+
+                            input("\nEnter anything to continue... ")
+                            break
+
+                    except ValueError as err:
+                        print("Are you sure you picked a valid value?\n")
+                        continue
+
+                break
+            return False
+    
+    def view_classroom(self, teacher_id, class_name, class_id):
+        return self.get_table(teacher_id, class_name, class_id)
 
     def account_information(self):
-        account_info = GetUserInformation(self.getfname(), self.getlname(),
-                                          self.get_username(), self.get_teacher_id(),
-                                          self.get_password())
+        print("\nViewing account details...\n")
+        account_info = GetUserInformation(self.get_fname(), self.get_lname(),
+                                          self.get_username(), self.get_email(),
+                                          self._student_id, self.get_password())
         print(account_info)
-        input("Enter anything to continue... ")
+        input("\nEnter anything to continue... ")
         return
+    
+    def update_account_information(self):
+        upd_info = UpdateInfo(self._student_id, self.get_username(),
+                              self.get_email(), self.get_password(), 
+                              role="Student")
+        upd_info.update_menu()
     
     def student_details(self):
         pass
-    
-    def help_page(self):
-        print(help_module.__doc__)
-        return None
