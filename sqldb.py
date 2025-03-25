@@ -2,15 +2,12 @@ import mysql.connector
 import time
 import configparser
 
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 from mysql import *
 from mysql.connector import errorcode
-from passlib.hash import pbkdf2_sha256
 from prettytable import PrettyTable, from_db_cursor
 from abc import ABC, abstractmethod
 from threading import Thread
-
-#load_dotenv()
 
 class ConnectSQLDatabase:
     db_name = "tester"
@@ -69,9 +66,25 @@ class DBOperations(ConnectSQLDatabase):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
 
+    def get_all_classrooms(self):
+        try:
+            print("\nViewing all clasrooms...")
+            classroom_table = PrettyTable()
+
+            classroom_row_query = """SELECT * FROM classrooms"""
+            self.db_cursor.execute(classroom_row_query)
+            
+            classroom_table = from_db_cursor(self.db_cursor)
+            print(f"\n{classroom_table}\n")
+
+        except Exception as err:
+            print("\n-- Something went wrong gathering all classrooms!")
+            print(err)
+            return None
+
     # This is only for main.py's login/register screen.
     def get_user_info(self, table_name, username):
-        table_list = ["teachers", "students"]
+        table_list = ["teachers", "students", "administrators"]
 
         if table_name not in table_list:
             print(f"{table_name} does not exist.")
@@ -91,8 +104,45 @@ class DBOperations(ConnectSQLDatabase):
             except Exception as err:
                 print(err)
                 return None
+            
+    def get_classroom_from_id(self, cid):
+        try:
+            row_query = f"""SELECT * FROM classrooms WHERE ClassroomID = %s"""
+            id_val = cid
+
+            self.db_cursor.execute(row_query, (id_val,))
+            fetch_query = self.db_cursor.fetchone()
+
+            if len(fetch_query) > 0:
+                return fetch_query
+            else:
+                print(f"The coruse with ID: {cid} does not exist in the records! \n")
+                return None
+        
+        except Exception as err:
+            print(err)
+            return None
+
+    # This method is called when updating information.
+    def get_student_from_id(self, uid):
+        try:
+            row_query = f"""SELECT * FROM students WHERE StudentID = %s"""
+            id_val = uid
+
+            self.db_cursor.execute(row_query, (id_val,))
+            fetch_query = self.db_cursor.fetchone()
+
+            if len(fetch_query) > 0:
+                return fetch_query
+            else:
+                print(f"The student with ID: {uid} does not exist in the records! \n")
+                return None
+        
+        except Exception as err:
+            print(err)
+            return None
     
-    def get_student_class_details(self, student_id):
+    def get_student_classnames(self, student_id):
         try:
             class_lst = []
 
@@ -104,9 +154,9 @@ class DBOperations(ConnectSQLDatabase):
 
             for i in range(len(class_ids)):
                 student_class_names = """SELECT CourseName FROM Classrooms WHERE ClassroomID = %s"""
-                class_name_val = class_ids[i]
+                class_id_val = class_ids[i]
 
-                self.db_cursor.execute(student_class_names, (class_name_val))
+                self.db_cursor.execute(student_class_names, (class_id_val))
                 class_names = self.db_cursor.fetchall()
 
                 class_lst.append(class_names)
@@ -115,6 +165,32 @@ class DBOperations(ConnectSQLDatabase):
         
         except Exception:
             pass
+
+    def get_student_class_id(self, student_id, class_name):
+        try:
+            student_class_id = """SELECT ClassroomID FROM student_classroom WHERE StudentID = %s"""
+            student_id_val = student_id
+
+            self.db_cursor.execute(student_class_id, (student_id_val,))
+            class_ids = self.db_cursor.fetchall()
+
+            for i in range(len(class_ids)):
+                name_query = """SELECT CourseName FROM Classrooms WHERE ClassroomID = %s"""
+                class_id_val = class_ids[i]
+
+                self.db_cursor.execute(name_query, (class_id_val))
+                class_names = self.db_cursor.fetchall()
+
+                if class_name in class_names[0]:
+                    return class_id_val[0]
+                break
+
+            else:
+                return None
+            
+        except Exception as err:
+            print("-- Searching for ClassroomID Error")
+            print(err)
     
     def get_class_teacher_id(self, student_id, class_name):
         try:
@@ -235,8 +311,11 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
 
-    def show_students(self, teacher_id, classroom_name, class_id):
+    def teacher_show_students(self, teacher_id, classroom_name, class_id):
         try:
+            table_header = PrettyTable()
+            table_header.field_names = [classroom_name]
+
             student_table = PrettyTable()
 
             show_query = """ 
@@ -258,9 +337,11 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
             query_res = self.db_cursor.fetchall()
 
             if query_res:
+                print(f"\n\n{table_header}")
                 print(f"\n{student_table}\n")
                 return True
             else:
+                print(f"\n\n{table_header}")
                 print(f"\n{student_table}")
                 return False
 
@@ -270,7 +351,78 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
 
         finally:
             return str(student_table)
+        
+    def students_show_students(self, teacher_id, classroom_name, class_id):
+        try:
+            table_header = PrettyTable()
+            table_header.field_names = [classroom_name]
+
+            student_table = PrettyTable()
+
+            show_query = """ 
+            SELECT students.FirstName AS STUDENT_FIRST_NAME,
+                   students.LastName AS STUDENT_LAST_NAME,
+                   classrooms.ClassroomID AS CLASSROOM_ID
+            FROM students
+            INNER JOIN student_classroom ON students.StudentID = student_classroom.StudentID
+            INNER JOIN classrooms ON student_classroom.ClassroomID = classrooms.ClassroomID
+            INNER JOIN teacher_classroom ON classrooms.ClassroomID = teacher_classroom.ClassroomID
+            INNER JOIN teachers ON teacher_classroom.TeacherID = teachers.TeacherID
+            WHERE teachers.TeacherID = %s AND classrooms.CourseName = %s AND classrooms.ClassroomID = %s;
+            """
+
+            self.db_cursor.execute(show_query, (teacher_id, classroom_name, class_id))
+            student_table = from_db_cursor(self.db_cursor)
+            query_res = self.db_cursor.fetchall()
+
+            if query_res:
+                print(f"\n\n{table_header}")
+                print(f"\n{student_table}\n")
+                return True
+            else:
+                print(f"\n\n{table_header}")
+                print(f"\n{student_table}\n")
+                return False
+
+        except Exception as err:
+            print("Unfortunately, trying to view the student table went wrong!")
+            print(err)
+
+        finally:
+            return str(student_table)
+    
+    def show_all_students(self):
+        try:
+            print("\nViewing all students...")
+            student_table = PrettyTable()
+
+            show_all_query = """SELECT * FROM students"""
+            self.db_cursor.execute(show_all_query)
+
+            student_table = from_db_cursor(self.db_cursor)
+            print(f"\n{student_table}\n")
+
+        except Exception as err:
+            print("\n- Something went wrong gathering all students!")
+            print(err)
+            return None
+        
+    def show_all_teachers(self):
+        try:
+            print("\nViewing all teachers...")
+            teacher_table = PrettyTable()
+
+            show_all_query = """SELECT * FROM teachers"""
+            self.db_cursor.execute(show_all_query)
+
+            teacher_table = from_db_cursor(self.db_cursor)
+            print(f"\n{teacher_table}\n")
             
+        except Exception as err:
+            print("\n-- Something went wrong gathering all students!")
+            print(err)
+            return None
+        
     def add_student(self, student_id, class_id):
         try:
             exists = DBOperations()
@@ -384,8 +536,8 @@ class StudentLoginCheck(ConnectSQLDatabase, LoginCheck):
                 print("The user does not exist! \n")
                 return False
             
-        except Exception as err:
-            print(err)
+        except Exception:
+            return False
 
     def login_pwd_check(self, username, pwd):
         try:
@@ -401,8 +553,8 @@ class StudentLoginCheck(ConnectSQLDatabase, LoginCheck):
             else:
                 return False
               
-        except Exception as err:
-            raise err
+        except Exception:
+            return False
 
 class TeacherLoginCheck(ConnectSQLDatabase, LoginCheck):
     def __init__(self):
@@ -430,8 +582,8 @@ class TeacherLoginCheck(ConnectSQLDatabase, LoginCheck):
                 print("Did you enter your name and/or ID properly? \n")
                 return False
             
-        except Exception as err:
-            raise err
+        except Exception:
+            return False
 
     def login_pwd_check(self, username, pwd):
         try:
@@ -446,8 +598,8 @@ class TeacherLoginCheck(ConnectSQLDatabase, LoginCheck):
             else:
                 return False
               
-        except Exception as err:
-            print(err)
+        except Exception:
+            return False
 
 class AdminLoginCheck(ConnectSQLDatabase, LoginCheck):
     def __init__(self):
@@ -457,7 +609,7 @@ class AdminLoginCheck(ConnectSQLDatabase, LoginCheck):
     def login_user_exists(self, username, employee_id):
         try:
             check_individual = """SELECT * FROM `administrators` WHERE UserName = %s"""
-            check_id = """SELECT * FROM `administrators` WHERE TeacherID = %s"""
+            check_id = """SELECT * FROM `administrators` WHERE AdministratorID = %s"""
             
             individual_val = str(username)
             individual_id = int(employee_id)
@@ -475,8 +627,8 @@ class AdminLoginCheck(ConnectSQLDatabase, LoginCheck):
                 print("Did you enter your name and/or ID properly? \n")
                 return False
             
-        except Exception as err:
-            raise err
+        except Exception:
+            return False
 
     def login_pwd_check(self, username, pwd):
         try:
@@ -491,8 +643,8 @@ class AdminLoginCheck(ConnectSQLDatabase, LoginCheck):
             else:
                 return False
               
-        except Exception as err:
-            raise err
+        except Exception:
+            return False
 
 class CreateRegisterTables(ConnectSQLDatabase):
     user_table = {}
@@ -503,7 +655,7 @@ class CreateRegisterTables(ConnectSQLDatabase):
 
     def student_register_table(self):
         try:
-            print("Checking for Student Table")
+            print("Checking for Student Table...")
             #time.sleep(1.5)
 
             self.user_table["Students"] = self.db_cursor.execute(
@@ -511,12 +663,11 @@ class CreateRegisterTables(ConnectSQLDatabase):
                 StudentID int NOT NULL AUTO_INCREMENT, 
                 FirstName varchar(255) not NULL, 
                 LastName varchar(255) not NULL, 
-                UserName varchar(20) not NULL, 
+                UserName varchar(20) not NULL UNIQUE, 
                 EmailAddress varchar(255) not NULL, 
                 Password varchar(64) not NULL, 
                 PRIMARY KEY(StudentID))"""
             )
-
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
                 print("Student table exists.\n")
@@ -532,7 +683,7 @@ class CreateRegisterTables(ConnectSQLDatabase):
 
     def teacher_register_table(self):
         try:
-            print("Checking for Teacher Table")
+            print("Checking for Teacher Table...")
             #time.sleep(1.5)
 
             self.user_table["Teachers"] = self.db_cursor.execute(
@@ -540,12 +691,11 @@ class CreateRegisterTables(ConnectSQLDatabase):
                 TeacherID int NOT NULL AUTO_INCREMENT, 
                 FirstName varchar(255) not NULL, 
                 LastName varchar(255) not NULL, 
-                UserName varchar(255) not NULL, 
+                UserName varchar(255) not NULL UNIQUE, 
                 EmailAddress varchar(255) not NULL, 
                 Password varchar(64) not NULL, 
                 PRIMARY KEY(TeacherID))"""
             )
-
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
                 print("Teacher table exists.\n")
@@ -553,7 +703,47 @@ class CreateRegisterTables(ConnectSQLDatabase):
                 return True
             else:
                 print(err)
+
+        except Exception as exc:
+            print("SQL Cursor -- Not Found! :(")
+            print(exc)
+            raise SystemExit
         
+    def administrator_register_table(self):
+        try:
+            print("Checking for Administrator Table...")
+            #time.sleep(1.5)
+
+            self.user_table["Administrators"] = self.db_cursor.execute(
+                """CREATE TABLE administrators( 
+                AdministratorID int NOT NULL, 
+                FirstName varchar(255) not NULL, 
+                LastName varchar(255) not NULL, 
+                UserName varchar(255) not NULL UNIQUE, 
+                EmailAddress varchar(255) not NULL, 
+                Password varchar(64) not NULL, 
+                PRIMARY KEY(AdministratorID))"""
+            )
+
+            # Probably fine to just have the admin credentials here...
+            admin_query = """INSERT INTO administrators(AdministratorID, FirstName,
+                                                        LastName, UserName, EmailAddress,
+                                                        Password)
+                             VALUES(%s, %s, %s, %s, %s, %s)"""
+            admin_vals = ("727", "root", 
+                          "user", "rootadministrator", 
+                          "root@yourlocalstore.com", "!_INFR2025_$$$$$$")
+            self.db_cursor.execute(admin_query, admin_vals)
+            self.sql_serv.commit()
+            
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                print("Administrator table exists.\n")
+                #time.sleep(1.5)
+                return True
+            else:
+                print(err)
+
         except Exception as exc:
             print("SQL Cursor -- Not Found! :(")
             print(exc)
@@ -605,16 +795,6 @@ class CreateRegisterTables(ConnectSQLDatabase):
                 """
             )
 
-            # self.user_table["student_classroom"] = self.db_cursor.execute(
-            #     """CREATE TABLE student_classroom( 
-            #     StudentID int NOT NULL,
-            #     ClassroomID int NOT NULL)
-            #     """
-            # )
-
-            # self.db_cursor.execute("TRUNCATE TABLE student_classroom")
-            # self.sql_serv.commit()
-
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
                 print("-- Good! \n")
@@ -646,16 +826,6 @@ class CreateRegisterTables(ConnectSQLDatabase):
                 """
             )
 
-            # self.user_table["teacher_classroom"] = self.db_cursor.execute(
-            #     """CREATE TABLE teacher_classroom( 
-            #     TeacherID int NOT NULL, 
-            #     ClassroomID int NOT NULL)
-            #     """
-            # )
-
-            # self.db_cursor.execute("TRUNCATE TABLE teacher_classroom")
-            # self.sql_serv.commit()
-
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
                 print("-- Good! \n")
@@ -678,8 +848,6 @@ class RegisterClassrooms(DBOperations, ConnectSQLDatabase):
 
     def check_classroom_table(self, employee_id):
         try:
-            #print("Checking for your classrooms... \n")
-
             check_query = """SELECT * FROM classrooms WHERE TeacherID = %s"""
             id_val = int(employee_id)
             self.db_cursor.execute(check_query, (id_val,))
@@ -734,29 +902,22 @@ class RegisterPerson(ConnectSQLDatabase):
         self.db_cursor = self.sql_serv.cursor()
 
     def get_student_uid(self):
-        student_user_id = self.db_cursor.execute(
-            f"SELECT FROM students WHERE UserName = {self.username}"
-        )
+        id_query = """SELECT TeacherID FROM students WHERE UserName = %s"""
+        self.db_cursor.execute(id_query, (self.username,))
 
         student_user_id = self.db_cursor.fetchone()
         return student_user_id
     
     def get_teacher_uid(self):
-        teacher_user_id = self.db_cursor.execute(
-            f"SELECT FROM teachers WHERE UserName = {self.username}"
-        )
+        id_query = """SELECT TeacherID FROM teachers WHERE UserName = %s"""
+        self.db_cursor.execute(id_query, (self.username,))
 
-        get_teacher_uid = self.db_cursor.fetchone()
-        return get_teacher_uid
+        teacher_user_id = self.db_cursor.fetchone()
+        print(teacher_user_id)
+        return teacher_user_id
 
     def register_teacher(self, fname, lname, username, email, password):
         try:
-            info = {
-                "Username: ": username,
-                "Email: ": email,
-                "Password: ": password
-            }
-
             register_query = """INSERT INTO teachers(FirstName, LastName, UserName, EmailAddress, Password) 
                                 VALUES (%s, %s, %s, %s, %s)"""
             register_val = (fname, lname, username, email, password)
@@ -767,17 +928,27 @@ class RegisterPerson(ConnectSQLDatabase):
             self.db_cursor.execute(check_individual, (individual_val,))
             res = self.db_cursor.fetchone()
 
-            print("\n\n** Please save this information if needed. **")
-            for k, v in info.items():
-                print(f"{k} {v}")
-            print("\n\n")
-
             if res:
                 print("The username already exists!")
                 return True
             else:
                 self.db_cursor.execute(register_query, register_val)
                 self.sql_serv.commit()
+
+                teacher_id = self.get_teacher_uid()[0]
+
+                info = {
+                    "Username: ": username,
+                    "Email: ": email,
+                    "Password: ": password,
+                    "Teacher ID (IMPORTANT): ": teacher_id
+                }
+
+                print("\n\n** Please save this information if needed. **")
+                for k, v in info.items():
+                    print(f"{k} {v}")
+                print("\n")
+
                 return False
 
         except Exception as err:
@@ -845,12 +1016,5 @@ class CheckDBState(DBOperations):
     
     @staticmethod
     def try_connection():
-        #obj = ConnectSQLDatabase()
+        obj = ConnectSQLDatabase()
         pass
-
-def main():
-    obj = ConnectSQLDatabase()
-    pass
-
-if __name__ == "__main__":
-    main()

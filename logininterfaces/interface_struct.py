@@ -52,7 +52,11 @@ class Interface(ABC, LoginInterface):
     
     def get_table(self, teacher_id, classroom_name, class_id):
         table_op = UserOperations()
-        return table_op.show_students(teacher_id, classroom_name, class_id) 
+        return table_op.teacher_show_students(teacher_id, classroom_name, class_id) 
+    
+    def get_students_table(self, teacher_id, classroom_name, class_id):
+        table_op = UserOperations()
+        return table_op.students_show_students(teacher_id, classroom_name, class_id) 
 
     @abstractmethod
     def account_information(self):

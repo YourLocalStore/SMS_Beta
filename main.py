@@ -23,7 +23,7 @@ class LoginInterface():
     def selection(self):
         while True:
             try:
-                print("\n -------- SMS Login Menu -------- \n")
+                print("\n ======== SMS General Login Menu ======== \n")
                 selection = {
                         1: "Staff Log-in",
                         2: "Student Log-in",
@@ -44,7 +44,7 @@ class LoginInterface():
                                 2: "Administrator",
                                 3: "Go Back"
                             }
-                            print("\n -------- SMS Staff Login Menu -------- \n")
+                            print("\n ======== SMS Staff Login Menu ======== \n")
                             for k,v in staff_choice.items():
                                 print(f"\t{k}: {v}")
 
@@ -63,7 +63,7 @@ class LoginInterface():
                                                                           self.__password, self.__teacher_id,
                                                                           self.__administrator_id)
                                 
-                                administrator_login.login(username="", pwd="", employee_id="")
+                                administrator_login.login(username="", pwd="")
 
                             elif staff_selection == 3:
                                 break
@@ -80,7 +80,7 @@ class LoginInterface():
                     student_login.login(username="", pwd="")
 
                 elif user_selection == 3:
-                    print("\n -------- SMS Register Menu -------- \n")
+                    print("\n ======== SMS Register Menu ======== \n")
                     register_selection = input("Are you a Teacher (Y/N)? ")
 
                     if register_selection.lower() == "n":
@@ -124,7 +124,7 @@ class AdminLoginInterface(LoginInterface):
                     login_status = False
                     break
 
-                self._LoginInterface__administrator_id = input("Enter your Employee ID: ")
+                self._LoginInterface__administrator_id = input("Enter your Administrator ID: ")
                 if self._LoginInterface__administrator_id == "0":
                     login_status = False
                     break
@@ -138,6 +138,7 @@ class AdminLoginInterface(LoginInterface):
                 pwd_valid = admin_login_obj.login_pwd_check(username, pwd)
 
                 if (not user_valid) or (not pwd_valid) or (not self._LoginInterface__administrator_id):
+                    print("\n=========== Incorrect User Information. ===========\n")
                     continue
                 else:
                     print("Logging in...")
@@ -188,13 +189,14 @@ class TeacherLoginInterface(LoginInterface):
                 pwd_valid = teacher_login_obj.login_pwd_check(username, pwd)
 
                 if (not user_valid) or (not pwd_valid) or (not self._LoginInterface__teacher_id):
+                    print("\n=========== Incorrect User Information. ===========\n")
                     continue
                 else:
                     print("Logging in...")
 
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
-                    teacher_info = db_operation.get_user_info(tables[4], username)
+                    teacher_info = db_operation.get_user_info(tables[5], username)
                     teacher_user = interfacing.TeacherInterface(teacher_info[1], teacher_info[2],
                                                                 teacher_info[3], teacher_info[4],
                                                                 teacher_info[5], self._LoginInterface__teacher_id,
@@ -235,13 +237,14 @@ class StudentLoginInterface(LoginInterface):
                 pwd_valid = student_login_obj.login_pwd_check(username, pwd)
 
                 if (not user_valid) or (not pwd_valid):
+                    print("\n=========== Incorrect User Information. ===========\n")
                     continue
                 else:
                     print("Logging in...")
 
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
-                    student_info = db_operation.get_user_info(tables[2], username)
+                    student_info = db_operation.get_user_info(tables[3], username)
                     student_user = interfacing.StudentInterface(student_info[1], student_info[2],
                                                                 student_info[3], student_info[4],
                                                                 student_info[5], self._LoginInterface__teacher_id,
@@ -471,6 +474,7 @@ if __name__ == "__main__":
         create_tables = sqldb.CreateRegisterTables()
         create_tables.student_register_table()
         create_tables.teacher_register_table()
+        create_tables.administrator_register_table()
         create_tables.classroom_table()
         create_tables.student_classroom_tables()
         create_tables.teacher_classroom_tables()
