@@ -419,6 +419,7 @@ class Utilities:
 
             self.connection_thread.join()
             self.message_thread.join()
+            return True
 
         except Exception as err:
             print("Please try again, or contact the developer immediately. \n")
@@ -436,15 +437,13 @@ class Utilities:
             print(f"{msg}     ", end='\r', flush=True)
 
             if (not thread.is_alive()):
-                print("Connection Successful!")
+                print("Connection Successful! \n")
                 loading = False
-                main()
+                break
 
             else:
                 print("Something went wrong! ")
                 break
-
-        return False
     
 def main():
     while True:
@@ -489,28 +488,22 @@ if __name__ == "__main__":
 
     try:
         util = Utilities()
-
-        create_tables = sqldb.CreateRegisterTables()
-        create_tables.student_register_table()
-        create_tables.teacher_register_table()
-        create_tables.administrator_register_table()
-        create_tables.classroom_table()
-        create_tables.student_classroom_tables()
-        create_tables.teacher_classroom_tables()
-
         connection_attempt = util.connect_to_db()
 
         if connection_attempt:
-            main()
+            create_tables = sqldb.CreateRegisterTables()
+            create_tables.student_register_table()
+            create_tables.teacher_register_table()
+            create_tables.administrator_register_table()
+            create_tables.classroom_table()
+            create_tables.student_classroom_tables()
+            create_tables.teacher_classroom_tables()
 
-    except AttributeError as attr_err:
-        print("-- Something went wrong! The error is shown below: ")
-        print(f"{attr_err}\n")
-        raise SystemExit
+            main()
     
-    except Exception as other_err:
+    except Exception as err:
         print("-- Something went wrong! The error is shown below:")
-        print(f"{other_err}\n")
+        print(f"{err}\n")
         raise SystemExit
 
 

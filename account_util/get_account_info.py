@@ -2,9 +2,11 @@ from prettytable import PrettyTable
 
 class GetUserInformation():
     information_table = PrettyTable()
-    information_table.field_names = ["First Name", "Last Name", 
-                                     "Username", "Email Address", 
-                                     "ID", "Password"]
+    information_table.field_names = [
+        "First Name", "Last Name", 
+        "Username", "Email Address", 
+        "ID", "Password"
+    ]
     
     def __init__(self, fname, lname, user, email, uid, pwd):
         self.fname = fname
