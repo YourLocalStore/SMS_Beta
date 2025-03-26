@@ -11,7 +11,7 @@ class AddClassroom:
                 user_op = sqldb.UserOperations()
                 db_op = sqldb.DBOperations()
 
-                class_name = input("Enter the course name: ")
+                class_name = input("\nEnter the course name: ")
                 yr_input = input("Enter the year/grade: ")
 
                 register = reg_classrooms.create_classroom(class_name, self.__teacher_id, yr_input)

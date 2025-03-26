@@ -1,19 +1,18 @@
-import datetime
 import time
-import pathlib
 import sqldb
 
-from logininterfaces import help_module
 from logininterfaces.interface_struct import Interface
+
 from classroom_util.add_class import AddClassroom
 from classroom_util.print_student_info import PrintInformation
 from classroom_util.download_class_info import DownloadClass
 from classroom_util.add_students import AddStudent
 from classroom_util.remove_students import RemoveStudents
+from classroom_util.update_classroom import UpdateClass
+from classroom_util.delete_classroom import DeleteCourse
+
 from account_util.get_account_info import GetUserInformation
 from account_util.update_account_info import UpdateInfo
-from classroom_util.update_classroom import UpdateClass
-from prettytable import PrettyTable
 
 class TeacherInterface(Interface):
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
@@ -28,11 +27,11 @@ class TeacherInterface(Interface):
 
             try:
                 self.selection = {
-                                1: ("Manage and View Courses", self.class_details),
-                                2: ("View Account Information", self.account_information),
-                                3: ("Update Account Information", self.update_account_information),
-                                4: ("Log-out", None)
-                            }
+                    1: ("Manage and View Courses", self.class_details),
+                    2: ("View Account Information", self.account_information),
+                    3: ("Update Account Information", self.update_account_information),
+                    4: ("Log-out", None)
+                }
                 
                 for k, v in self.selection.items():
                     print(f"\t{k}: " + f"{v[0]}".strip("'"))
@@ -236,17 +235,21 @@ class TeacherInterface(Interface):
 
     def account_information(self):
         print("\nViewing account details...\n")
-        account_info = GetUserInformation(self.get_fname(), self.get_lname(),
-                                          self.get_username(), self.get_email(),
-                                          self.get_teacher_id(), self.get_password())
+        account_info = GetUserInformation(
+            self.get_fname(), self.get_lname(),
+            self.get_username(), self.get_email(),
+            self.get_teacher_id(), self.get_password()
+        )
         print(account_info)
         input("\nEnter anything to continue... ")
         return
     
     def update_account_information(self):
-        upd_info = UpdateInfo(self.get_teacher_id(), self.get_username(),
-                              self.get_email(), self.get_password(), 
-                              role="Teacher")
+        upd_info = UpdateInfo(
+            self.get_teacher_id(), self.get_username(),
+            self.get_email(), self.get_password(), 
+            role="Teacher"
+        )
         upd_info.update_menu()
 
     def student_details(self):
@@ -281,11 +284,11 @@ class AdminInterface(Interface):
 
             try:
                 self.selection = {
-                                1: ("View and Edit Courses", self.view_all_courses),
-                                2: ("View Account Information", self.account_information),
-                                3: ("Update Account Information", self.update_account_information),
-                                4: ("Log-out", None)
-                            }
+                    1: ("View and Edit Courses", self.view_all_courses),
+                    2: ("View Student/Teacher Information", self.account_information),
+                    3: ("Update Account Information", self.update_account_information),
+                    4: ("Log-out", None)
+                }
                 
                 for k, v in self.selection.items():
                     print(f"\t{k}: " + f"{v[0]}".strip("'"))
@@ -308,31 +311,38 @@ class AdminInterface(Interface):
                 continue
 
     def view_all_courses(self):
-        classroom_op = sqldb.DBOperations()
-        classroom_op.get_all_classrooms()
-
         while True:
-            class_edit_opt = input("\nWould you like to view a specific class? (Y/N): ")
+            try:
+                classroom_op = sqldb.DBOperations()
+                classroom_op.get_all_classrooms()
 
-            if class_edit_opt.lower() == "y":
-                self.view_individual_class()
-                break
-            elif class_edit_opt.lower() == "n":
-                break
-            else:
-                print("Select a valid option. \n")
-                continue
+                print("\n======== Classroom/Account Options ======== \n")
+                self.selection = {
+                    1: ("View a specific class", self.view_individual_class),
+                    2: ("Edit a class", self.edit_courses),
+                    3: ("Delete a class", self.delete_course),
+                    4: ("Remove a Student/Teacher", self.remove_person),
+                    5: ("Exit", None)
+                }
 
-        while True:
-            class_edit_opt = input("\nWould you like to edit a class? (Y/N): ")
+                for k, v in self.selection.items():
+                    print(f"\t{k}: " + f"{v[0]}".strip("'"))
 
-            if class_edit_opt.lower() == "y":
-                self.edit_courses()
-                break
-            elif class_edit_opt.lower() == "n":
-                return None
-            else:
-                print("Select a valid option. \n")
+                print("")
+                self.admin_course_selection = int(input("Enter an Option: "))
+
+                if self.admin_course_selection == 5:
+                    log = self.exit_interface()
+                    if not log:
+                        break
+                elif (self.admin_course_selection >= 1 and self.admin_course_selection <= 4):
+                    self.selection[self.admin_course_selection][1]()
+                else:
+                    print("Please enter a valid value. \n")
+                    continue                
+
+            except ValueError:
+                print("Please enter a valid value. \n")
                 continue
 
     def edit_courses(self):
@@ -343,9 +353,11 @@ class AdminInterface(Interface):
 
         if check_details:
             print("\nUpdating course details...\n")
-            upd_info = UpdateClass(class_id, check_details[1],
-                                  check_details[2], check_details[3], 
-                                  check_details[4])
+            upd_info = UpdateClass(
+                class_id, check_details[1],
+                check_details[2], check_details[3], 
+                check_details[4]
+            )
             upd_info.update_menu()
         else:
             print("This class does not exist!")
@@ -353,21 +365,186 @@ class AdminInterface(Interface):
         
         input("Enter anything to continue... ")
         return True
-    
+
+    def delete_course(self):
+        classroom_op = sqldb.DBOperations()
+
+        while True:
+            admin_selection = input("\nAre you sure? (Y/N): ")
+
+            if admin_selection.lower() == "y":
+                classroom_op.get_all_classrooms()
+
+                class_id = int(input("Select the ID of the class: "))
+                check_details = classroom_op.get_classroom_from_id(class_id)
+
+                if check_details:
+                    print("Deleting course...\n")
+                    deletion = DeleteCourse(check_details[3], class_id, check_details[4])
+                    deletion.delete_course()
+                    break
+            
+                else:
+                    print("This class does not exist!")
+                    print("Are you sure you selected the right ID? \n")
+
+                input("Enter anything to continue... ")
+                return True
+
+            elif admin_selection.lower == "n":
+                break
+            else:
+                print("Please select a valid option! \n")
+                continue
+
+    def remove_person(self):
+        classroom_op = sqldb.DBOperations()
+        user_op = sqldb.UserOperations()
+
+        while True:
+            admin_selection = input("\nAre you sure? (Y/N): ")
+
+            if admin_selection.lower() == "y":
+                print("\n================= Remove Accounts ================= \n")
+                self.selection = {
+                    1: "Remove Student from Classroom",
+                    2: "Remove Student from Records",
+                    3: "Remove Teacher from Classroom",
+                    4: "Remove Teacher from Records"
+                }
+
+                for k, v in self.selection.items():
+                    print(f"\t{k}: " + f"{v}")
+
+                print("")
+                self.admin_removal_selection = int(input("Enter an Option: "))
+
+                if self.admin_removal_selection == 1:
+                    classroom_op.get_all_classrooms()
+                    get_class_id = int(input("Enter the class ID: "))
+                    check_details_class = classroom_op.get_classroom_from_id(get_class_id)
+
+                    user_op.show_all_students()
+                    get_student_id = int(input("\nEnter the student ID: "))
+                    check_details_student = classroom_op.get_student_from_id(get_student_id)
+
+                    if check_details_student and check_details_class:
+                        deletion = RemoveStudents()
+                        deletion.remove_person(get_student_id, get_class_id)
+                    else:
+                        print("Unfortunately, the operation cannot be conducted...")
+                        print("Ensure that the ID values are correct. \n")
+                    break
+
+                elif self.admin_removal_selection == 2:
+                    user_op.show_all_students()
+                    get_student_id = int(input("Enter the student ID: "))
+                    check_details_student = classroom_op.get_student_from_id(get_student_id)
+
+                    if check_details_student and check_details_class:
+                        user_op.remove_student_record(get_student_id)
+                    else:
+                        print("Unfortunately, the operation cannot be conducted...")
+                        print("Ensure that the ID values are correct. \n")
+                    break
+                
+                elif self.admin_removal_selection == 3:
+                    classroom_op.get_all_classrooms()
+                    get_class_id = int(input("Enter the class ID: "))
+                    check_details_class = classroom_op.get_classroom_from_id(get_class_id)
+
+                    if check_details_class:
+                        while True:
+                            try:
+                                new_teacher_id = int(input("Assign a new teacher (ID): "))
+
+                                if new_teacher_id == 0:
+                                    print("Zero is not an accepted value.")
+                                    break
+
+                                upd_id = UpdateClass(
+                                    get_class_id, teacher_id="",
+                                    grade="", course_name="",
+                                    section=""
+                                )
+                                upd_id.update_teacher_id(new_teacher_id)
+                                break
+
+                            except ValueError:
+                                print("Please enter valid values. \n")
+                                continue
+                    else:
+                        print("Unfortunately, the operation cannot be conducted...")
+                        print("Ensure that the ID values are correct. \n")
+                    break
+
+                elif self.admin_removal_selection == 4:
+
+                    print("\n======== WARNING!!! ========")
+                    print("If you remove a teacher from the records, then all of their classes will be gone.")
+                    print("I suggest changing the teacher ID values beforehand if you need to save courses.")
+
+                    get_confirmation = input("\nDo you wish to continue? (Y/N): ")
+
+                    if get_confirmation.lower() == "y":
+                        user_op.show_all_teachers()
+                        get_teacher_id = int(input("Enter the teacher ID: "))
+                        check_details_teacher = classroom_op.get_teacher_from_id(get_teacher_id)
+
+                        if check_details_teacher:
+                            user_op.remove_teacher_record(get_teacher_id)
+                            classroom_op.delete_all_classes(get_teacher_id)
+                            print(f"Teacher of (ID: {get_teacher_id}) was removed from records, as well as any associated classrooms.")
+                        else:
+                            print("Unfortunately, the operation cannot be conducted...")
+                            print("Ensure that the ID values are correct. \n")
+                            break
+                        break
+
+                    elif get_confirmation.lower() == "n":
+                        break
+
+            elif admin_selection.lower == "n":
+                break
+            else:
+                print("Please select a valid option! \n")
+                continue
+
     def view_individual_class(self):
-        pass
-    
+        while True:
+            try:
+                class_id = int(input("Enter the ID of the class: "))
+                classroom_op = sqldb.DBOperations()
+                cls_details = classroom_op.get_classroom_from_id(class_id)
+
+                if cls_details:
+                    self.get_table(
+                        cls_details[1], cls_details[3],
+                        class_id
+                    )
+
+                    input("Enter anything to continue...")
+                    return True
+                else:
+                    print("This class does not exist!")
+                    input("Enter anything to continue...")
+                    return False
+            
+            except ValueError:
+                print("Are you sure you chose a valid value? \n")
+                continue      
+
     def account_information(self):
         account_op = sqldb.UserOperations()
         while True:
             try:
-                print("\n======== Account Information ======== ")
+                print("\n======== Account Information ======== \n")
                 self.selection = {
-                                1: ("Students", None),
-                                2: ("Teachers", None),
-                                3: ("Current Account (You)", None),
-                                4: ("Go Back", None)
-                            }
+                    1: ("Students", None),
+                    2: ("Teachers", None),
+                    3: ("Current Account (You)", None),
+                    4: ("Go Back", None)
+                }
                 for k, v in self.selection.items():
                     print(f"\t{k}: " + f"{v[0]}".strip("'"))    
                 print("") 
@@ -389,9 +566,11 @@ class AdminInterface(Interface):
 
             elif account_selection == 3:
                 print("\nViewing account details...\n")
-                account_info = GetUserInformation(self.get_fname(), self.get_lname(),
-                                                  self.get_username(), self.get_email(),
-                                                  self.get_admin_id(), self.get_password())
+                account_info = GetUserInformation(
+                    self.get_fname(), self.get_lname(),
+                    self.get_username(), self.get_email(),
+                    self.get_admin_id(), self.get_password()
+                )
                 print(account_info)
                 input("\nEnter anything to continue... ")
                 return
@@ -408,14 +587,14 @@ class AdminInterface(Interface):
         account_op = sqldb.UserOperations()
         account_db_op = sqldb.DBOperations()
         while True:
-            try:
-                print("\n======== Update Account Information ======== ")
+            try: 
+                print("\n======== Update Account Information ======== \n")
                 self.selection = {
-                                1: ("Students", None),
-                                2: ("Teachers", None),
-                                3: ("Current Account (You)", None),
-                                4: ("Go Back", None)
-                            }
+                    1: ("Students", None),
+                    2: ("Teachers", None),
+                    3: ("Current Account (You)", None),
+                    4: ("Go Back", None)
+                }
                 print("") 
                 for k, v in self.selection.items():
                     print(f"\t{k}: " + f"{v[0]}".strip("'"))    
@@ -433,9 +612,11 @@ class AdminInterface(Interface):
 
                 if check_details:
                     print("\nUpdating account details...\n")
-                    upd_info = UpdateInfo(student_selection_id, check_details[3],
-                                          check_details[4], check_details[5], 
-                                          role="Student")
+                    upd_info = UpdateInfo(
+                        student_selection_id, check_details[3],
+                        check_details[4], check_details[5], 
+                        role="Student"
+                    )
                     upd_info.update_menu()
                 else:
                     print("This user does not exist!")
@@ -452,9 +633,11 @@ class AdminInterface(Interface):
 
                 if check_details:
                     print("\nUpdating account details...\n")
-                    upd_info = UpdateInfo(teacher_selection_id, check_details[3],
-                                          check_details[4], check_details[5], 
-                                          role="Teacher")
+                    upd_info = UpdateInfo(
+                        teacher_selection_id, check_details[3],
+                        check_details[4], check_details[5], 
+                        role="Teacher"
+                    )
                     upd_info.update_menu()
                 else:
                     print("This user does not exist!")
@@ -465,9 +648,11 @@ class AdminInterface(Interface):
 
             elif account_selection == 3:
                 print("\nUpdating own account details...\n")
-                upd_info = UpdateInfo(self.get_admin_id(), self.get_username(),
-                                      self.get_email(), self.get_password(), 
-                                      role="Administrator")
+                upd_info = UpdateInfo(
+                    self.get_admin_id(), self.get_username(),
+                    self.get_email(), self.get_password(), 
+                    role="Administrator"
+                )
                 upd_info.update_menu()
                 continue
             
@@ -515,11 +700,11 @@ class StudentInterface(Interface):
 
             try:
                 self.selection = {
-                                1: ("View Your Courses", self.class_details),
-                                2: ("View Account Information", self.account_information),
-                                3: ("Update Account Information", self.update_account_information),
-                                4: ("Log-out", None)
-                            }
+                    1: ("View Your Courses", self.class_details),
+                    2: ("View Account Information", self.account_information),
+                    3: ("Update Account Information", self.update_account_information),
+                    4: ("Log-out", None)
+                }
                 
                 for k, v in self.selection.items():
                     print(f"\t{k}: " + f"{v[0]}".strip("'"))
@@ -597,17 +782,21 @@ class StudentInterface(Interface):
 
     def account_information(self):
         print("\nViewing account details...\n")
-        account_info = GetUserInformation(self.get_fname(), self.get_lname(),
-                                          self.get_username(), self.get_email(),
-                                          self._student_id, self.get_password())
+        account_info = GetUserInformation(
+            self.get_fname(), self.get_lname(),
+            self.get_username(), self.get_email(),
+            self._student_id, self.get_password()
+        )
         print(account_info)
         input("\nEnter anything to continue... ")
         return
     
     def update_account_information(self):
-        upd_info = UpdateInfo(self._student_id, self.get_username(),
-                              self.get_email(), self.get_password(), 
-                              role="Student")
+        upd_info = UpdateInfo(
+            self._student_id, self.get_username(),
+            self.get_email(), self.get_password(), 
+            role="Student"
+        )
         upd_info.update_menu()
     
     def student_details(self):

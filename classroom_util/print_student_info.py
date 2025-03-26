@@ -7,7 +7,7 @@ class PrintInformation:
 
         for i in range(len(self.student_info)):
             fields = ["Student ID", "First Name", "Last Name",
-                        "Username", "Student Email"]
+                      "Username", "Student Email"]
             
             print(f"{fields[i]}: {self.student_info[i]}")
 

@@ -145,10 +145,12 @@ class AdminLoginInterface(LoginInterface):
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
                     admin_info = db_operation.get_user_info(tables[0], username)
-                    admin_user = interfacing.AdminInterface(admin_info[1], admin_info[2],
-                                                            admin_info[3], admin_info[4],
-                                                            admin_info[5], self._LoginInterface__teacher_id,
-                                                            self._LoginInterface__administrator_id)
+                    admin_user = interfacing.AdminInterface(
+                        admin_info[1], admin_info[2],
+                        admin_info[3], admin_info[4],
+                        admin_info[5], self._LoginInterface__teacher_id,
+                        self._LoginInterface__administrator_id
+                    )
                     if type(admin_user) == None:
                         break
                 break
@@ -197,10 +199,12 @@ class TeacherLoginInterface(LoginInterface):
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
                     teacher_info = db_operation.get_user_info(tables[5], username)
-                    teacher_user = interfacing.TeacherInterface(teacher_info[1], teacher_info[2],
-                                                                teacher_info[3], teacher_info[4],
-                                                                teacher_info[5], self._LoginInterface__teacher_id,
-                                                                self._LoginInterface__administrator_id)
+                    teacher_user = interfacing.TeacherInterface(
+                        teacher_info[1], teacher_info[2],
+                        teacher_info[3], teacher_info[4],
+                        teacher_info[5], self._LoginInterface__teacher_id,
+                        self._LoginInterface__administrator_id
+                    )
                     if type(teacher_user) == None:
                         break
                 break
@@ -245,10 +249,12 @@ class StudentLoginInterface(LoginInterface):
                     db_operation = sqldb.DBOperations()
                     tables = db_operation.get_table_names()
                     student_info = db_operation.get_user_info(tables[3], username)
-                    student_user = interfacing.StudentInterface(student_info[1], student_info[2],
-                                                                student_info[3], student_info[4],
-                                                                student_info[5], self._LoginInterface__teacher_id,
-                                                                self._LoginInterface__administrator_id, student_info[0])
+                    student_user = interfacing.StudentInterface(
+                        student_info[1], student_info[2],
+                        student_info[3], student_info[4],
+                        student_info[5], self._LoginInterface__teacher_id,
+                        self._LoginInterface__administrator_id, student_info[0]
+                    )
                     if type(student_user) == None:
                         break
                 break
@@ -301,12 +307,16 @@ class TeacherRegisterInterface(RegisterInterface, LoginInterface):
                     register_condition == False
                     break
                 
-                user_registering = sqldb.RegisterPerson(self.__fname, self.__lname, 
-                                                        self.username, self.__email, 
-                                                        self.__password)
-                check_user = user_registering.register_teacher(self.__fname, self.__lname, 
-                                                               self.username, self.__email, 
-                                                               self.__password)
+                user_registering = sqldb.RegisterPerson(
+                    self.__fname, self.__lname, 
+                    self.username, self.__email, 
+                    self.__password
+                )
+                check_user = user_registering.register_teacher(
+                    self.__fname, self.__lname, 
+                    self.username, self.__email, 
+                    self.__password
+                )
                 # If the user is registered
                 if check_user:
                     print("Unfortunately, the user already exists. Please try again! \n")
@@ -363,12 +373,17 @@ class StudentRegisterInterface(RegisterInterface, LoginInterface):
                     register_condition == False
                     break
 
-                user_registering = sqldb.RegisterPerson(self.__fname, self.__lname, 
-                                                        self.username, self.__email, 
-                                                        self.__password)
-                check_user = user_registering.register_student(self.__fname, self.__lname, 
-                                                               self.username, self.__email, 
-                                                               self.__password)
+                user_registering = sqldb.RegisterPerson(
+                    self.__fname, self.__lname, 
+                    self.username, self.__email, 
+                    self.__password
+                )
+                check_user = user_registering.register_student(
+                    self.__fname, self.__lname, 
+                    self.username, self.__email, 
+                    self.__password
+                )
+
                 # If the user is registered
                 if check_user:
                     print("Unfortunately, the user already exists. Please try again! \n")
@@ -394,8 +409,10 @@ class Utilities:
             msg = "Connecting to Database"
 
             self.connection_thread = Thread(target=sqldb.CheckDBState.try_connection)
-            self.message_thread = Thread(target=Utilities.load_connect_msg, 
-                                         args=(self, msg, self.connection_thread,))
+            self.message_thread = Thread(
+                target=Utilities.load_connect_msg, 
+                args=(self, msg, self.connection_thread,)
+            )
 
             self.connection_thread.start()
             self.message_thread.start()
@@ -444,10 +461,12 @@ def main():
             user_selection = int(input("\nEnter a selection: "))
 
             if user_selection == 1:
-                user_login = LoginInterface(fname="", lname="", 
-                                            username="", email="", 
-                                            password="", teacher_id="",
-                                            administrator_id="")
+                user_login = LoginInterface(
+                    fname="", lname="", 
+                    username="", email="", 
+                    password="", teacher_id="",
+                    administrator_id=""
+                )
                 user_login.selection()
             elif user_selection == 2:
                 raise SystemExit
