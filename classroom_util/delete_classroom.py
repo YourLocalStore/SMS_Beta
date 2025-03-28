@@ -36,6 +36,15 @@ class DeleteCourse:
             course_vals = section_lst[i], class_ids[i]
             self.db_op.db_cursor.execute(update_course_sections, course_vals)
 
+        update_mode_query_off = """SET SQL_SAFE_UPDATES = 0"""
+        self.db_op.db_cursor.execute(update_mode_query_off)
+        
+        update_student_classrooms = """DELETE FROM student_classroom WHERE ClassroomID = %s"""
+        self.db_op.db_cursor.execute(update_student_classrooms, (self.class_id,))
+
+        update_mode_query_on = """SET SQL_SAFE_UPDATES = 1"""
+        self.db_op.db_cursor.execute(update_mode_query_on)
+
         print(f"{self.course_name} (ID: {self.class_id}) (Section: {self.section}) has been deleted.")
         self.db_op.sql_serv.commit()
         return True

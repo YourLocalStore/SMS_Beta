@@ -327,9 +327,19 @@ class DBOperations(ConnectSQLDatabase):
             get_ids = self.db_cursor.fetchall()
 
             for i in range(len(get_ids)):
+
                 course_query = """DELETE FROM classrooms WHERE ClassroomID = %s"""
                 class_ids = get_ids[i][0]
                 self.db_cursor.execute(course_query, (class_ids,))
+
+                update_mode_query_off = """SET SQL_SAFE_UPDATES = 0"""
+                self.db_op.db_cursor.execute(update_mode_query_off)
+        
+                update_student_classrooms = """DELETE FROM student_classroom WHERE ClassroomID = %s"""
+                self.db_op.db_cursor.execute(update_student_classrooms, (class_ids,))
+
+                update_mode_query_on = """SET SQL_SAFE_UPDATES = 1"""
+                self.db_op.db_cursor.execute(update_mode_query_on)
 
             self.sql_serv.commit()
             return True

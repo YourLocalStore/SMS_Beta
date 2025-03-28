@@ -172,7 +172,7 @@ class UpdateInfo:
             vals = new_pwd, self.__uid
             self.db_op.db_cursor.execute(update_query, vals)
         
-        print("Username updated!")
-        print(f"New username: {new_pwd}")
+        print("Password updated!")
+        print(f"New password: {new_pwd}")
         self.db_op.sql_serv.commit()
         return True

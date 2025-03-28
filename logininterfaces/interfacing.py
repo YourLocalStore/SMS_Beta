@@ -108,9 +108,12 @@ class TeacherInterface(Interface):
                                 op = sqldb.UserOperations()
 
                                 while True:
-                                    self.get_table(teacher_uid, class_lst[ind], class_id_lst[ind])
-                                    cls_id = op.get_classroom_id(class_lst[ind], teacher_uid, section_lst[ind])
-
+                                    self.get_table(
+                                        teacher_uid, class_lst[ind], class_id_lst[ind]
+                                    )
+                                    cls_id = op.get_classroom_id(
+                                        class_lst[ind], teacher_uid, section_lst[ind]
+                                    )
                                     try:
                                         class_options = {
                                             1: "View Student Information",
@@ -178,7 +181,9 @@ class TeacherInterface(Interface):
                                         save_input = input("\nWould you like to save classroom information? (Y/N): ")
 
                                         if save_input.lower() == "y":
-                                            download_op = DownloadClass(teacher_uid, class_lst[ind])
+                                            download_op = DownloadClass(
+                                                teacher_uid, class_lst[ind], cls_id
+                                            )
                                             download_op.download_file()
                                             break 
                                         elif save_input.lower() == "n":
@@ -198,14 +203,18 @@ class TeacherInterface(Interface):
                                         break
                             else:
                                 print("Please select something in range! \n")
+                                class_lst.clear()
                                 continue
                     
                         except ValueError as val_err:
-                            print("Did you select the right value?")
+                            print("\n======= Did you select the right value? =======")
+                            class_lst.clear()
                             print(val_err)
                             continue
+
                         except Exception as err:
-                            print("Course Selection Error")
+                            print("\n======= Course Selection Error =======")
+                            class_lst.clear()
                             print(err)
                             break
 
@@ -215,7 +224,7 @@ class TeacherInterface(Interface):
                         continue
 
             except ValueError:
-                print("Are you sure you entered the right values? \n")
+                print("======= Are you sure you entered the right values? =======\n")
                 continue
             except Exception as err:
                 print(err)
@@ -380,7 +389,9 @@ class AdminInterface(Interface):
 
                 if check_details:
                     print("Deleting course...\n")
-                    deletion = DeleteCourse(check_details[3], class_id, check_details[4])
+                    deletion = DeleteCourse(
+                        check_details[3], class_id, check_details[4]
+                    )
                     deletion.delete_course()
                     break
             
@@ -459,7 +470,7 @@ class AdminInterface(Interface):
                                 new_teacher_id = int(input("Assign a new teacher (ID): "))
 
                                 if new_teacher_id == 0:
-                                    print("Zero is not an accepted value.")
+                                    print("Zero is not an accepted value. \n")
                                     break
 
                                 upd_id = UpdateClass(
@@ -595,7 +606,6 @@ class AdminInterface(Interface):
                     3: ("Current Account (You)", None),
                     4: ("Go Back", None)
                 }
-                print("") 
                 for k, v in self.selection.items():
                     print(f"\t{k}: " + f"{v[0]}".strip("'"))    
                 account_selection = int(input("\nEnter an option: "))
