@@ -2,7 +2,6 @@ import sqldb
 import visuals.titlescreen as titlescreen
 import time
 import sys, os
-
 import logininterfaces.interfacing as interfacing
 
 from abc import ABC, abstractmethod
@@ -227,7 +226,7 @@ class StudentLoginInterface(LoginInterface):
 
         while login_status:
             try:
-                username = input("\nEnter Your Username: ")
+                username = input("Enter Your Username: ")
                 if username == "0":
                     login_status = False
                     break

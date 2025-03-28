@@ -1,12 +1,13 @@
 import sqldb
 
-class UpdateInfo:
+class UpdateInfo():
     def __init__(self, uid, user, email, password, role):
         self.__uid = uid
         self.user = user
         self.__email = email
         self.__password = password
         self.role = role # This is to know which table to update
+
         self.db_op = sqldb.DBOperations()
 
     def update_menu(self):

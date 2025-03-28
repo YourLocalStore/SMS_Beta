@@ -201,7 +201,6 @@ class DBOperations(ConnectSQLDatabase):
 
                 if class_name in class_names[0]:
                     return class_id_val[0]
-                break
 
             else:
                 return None
@@ -576,6 +575,26 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
         
         except Exception as err:
             print(err)
+
+    def get_user_information(self, uid, role):
+        self.info_table = PrettyTable()
+
+        if role == "Teacher":
+            teacher_query = """SELECT * FROM teachers WHERE TeacherID = %s"""
+            self.db_cursor.execute(teacher_query, (uid,))
+            self.info_table = from_db_cursor(self.db_cursor)
+
+        elif role == "Student":
+            student_query = """SELECT * FROM students WHERE StudentID = %s"""
+            self.db_cursor.execute(student_query, (uid,))
+            self.info_table = from_db_cursor(self.db_cursor)
+
+        elif role == "Administrator":
+            admin_query = """SELECT * FROM administrators WHERE AdministratorID = %s"""
+            self.db_cursor.execute(admin_query, (uid,))
+            self.info_table = from_db_cursor(self.db_cursor)
+
+        return self.info_table
 
     def assign_teacher(self, teacher_id, class_id):
         try:

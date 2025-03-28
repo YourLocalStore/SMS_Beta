@@ -19,30 +19,30 @@ class Interface(ABC, LoginInterface):
     def get_lname(self):
         return self._LoginInterface__lname
     
-    def set_fname(self, new_lname):
-        self._LoginInterface__fname = new_lname
-        return self._LoginInterface__fname
+    def set_lname(self, new_lname):
+        self._LoginInterface__lname = new_lname
+        return self._LoginInterface__lname
     
     def get_username(self):
         return self.username
     
     def set_username(self, new_username):
-        self._LoginInterface__fname = new_username
-        return self._LoginInterface__fname
+        self.username = new_username
+        return self.username
     
     def get_email(self):
         return self._LoginInterface__email
     
     def set_email(self, new_email):
-        self._LoginInterface__fname = new_email
-        return self._LoginInterface__fname
+        self._LoginInterface__email = new_email
+        return self._LoginInterface__email
     
     def get_password(self):
         return self._LoginInterface__password
     
     def set_password(self, new_password):
-        self._LoginInterface__fname = new_password
-        return self._LoginInterface__fname
+        self._LoginInterface__password = new_password
+        return self._LoginInterface__password
     
     def get_teacher_id(self):
         return self._LoginInterface__teacher_id

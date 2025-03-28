@@ -11,7 +11,6 @@ from classroom_util.remove_students import RemoveStudents
 from classroom_util.update_classroom import UpdateClass
 from classroom_util.delete_classroom import DeleteCourse
 
-from account_util.get_account_info import GetUserInformation
 from account_util.update_account_info import UpdateInfo
 
 class TeacherInterface(Interface):
@@ -244,12 +243,9 @@ class TeacherInterface(Interface):
 
     def account_information(self):
         print("\nViewing account details...\n")
-        account_info = GetUserInformation(
-            self.get_fname(), self.get_lname(),
-            self.get_username(), self.get_email(),
-            self.get_teacher_id(), self.get_password()
-        )
-        print(account_info)
+        acc_op = sqldb.UserOperations()
+        print(acc_op.get_user_information(self.get_teacher_id(), role="Teacher"))
+
         input("\nEnter anything to continue... ")
         return
     
@@ -259,6 +255,7 @@ class TeacherInterface(Interface):
             self.get_email(), self.get_password(), 
             role="Teacher"
         )
+
         upd_info.update_menu()
 
     def student_details(self):
@@ -452,7 +449,7 @@ class AdminInterface(Interface):
                     get_student_id = int(input("Enter the student ID: "))
                     check_details_student = classroom_op.get_student_from_id(get_student_id)
 
-                    if check_details_student and check_details_class:
+                    if check_details_student:
                         user_op.remove_student_record(get_student_id)
                     else:
                         print("Unfortunately, the operation cannot be conducted...")
@@ -577,12 +574,9 @@ class AdminInterface(Interface):
 
             elif account_selection == 3:
                 print("\nViewing account details...\n")
-                account_info = GetUserInformation(
-                    self.get_fname(), self.get_lname(),
-                    self.get_username(), self.get_email(),
-                    self.get_admin_id(), self.get_password()
-                )
-                print(account_info)
+                acc_op = sqldb.UserOperations()
+                print(acc_op.get_user_information(self.get_admin_id(), role="Administrator"))
+
                 input("\nEnter anything to continue... ")
                 return
             
@@ -775,8 +769,8 @@ class StudentInterface(Interface):
                         if (course_select > 0) and (course_select <= len(result)):
                             teacher_id = class_check_op.get_class_teacher_id(self._student_id, result[ind])
                             class_id = class_check_op.get_student_class_id(self._student_id, result[ind])
-                            self.view_classroom(teacher_id, result[ind], class_id)
 
+                            self.view_classroom(teacher_id, result[ind], class_id)
                             input("\nEnter anything to continue... ")
                             break
 
@@ -792,12 +786,8 @@ class StudentInterface(Interface):
 
     def account_information(self):
         print("\nViewing account details...\n")
-        account_info = GetUserInformation(
-            self.get_fname(), self.get_lname(),
-            self.get_username(), self.get_email(),
-            self._student_id, self.get_password()
-        )
-        print(account_info)
+        acc_op = sqldb.UserOperations()
+        print(acc_op.get_user_information(self._student_id, role="Student"))
         input("\nEnter anything to continue... ")
         return
     
