@@ -521,7 +521,7 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
                 return True
             
             else:
-                print('womp')
+                print("This user does not exist! \n")
                 return False
 
         except Exception as err:

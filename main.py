@@ -163,7 +163,7 @@ class TeacherLoginInterface(LoginInterface):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
     
     def login(self, username, pwd):
-        print("\n   < Go Back (Enter 0) \t\t || Teacher Registration Page ||" + \
+        print("\n   < Go Back (Enter 0) \t\t || Teacher Login Page ||" + \
               "\n # ------------------------------------------------------------- # \n ")
         
         login_status = True

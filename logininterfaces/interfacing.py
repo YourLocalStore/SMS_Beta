@@ -42,6 +42,8 @@ class TeacherInterface(Interface):
                     log = self.exit_interface()
                     if not log:
                         break
+                    else:
+                        continue
                 elif (self.teacher_selection >= 1 and self.teacher_selection <= 3):
                     self.selection[self.teacher_selection][1]()
                 else:
@@ -271,7 +273,8 @@ class TeacherInterface(Interface):
                     print("Exiting...")
                     return False
                 elif exit_selection.lower() == "n":
-                    break
+                    return True
+                break
 
             except Exception:
                 print("Please enter a valid value. \n")
@@ -306,6 +309,8 @@ class AdminInterface(Interface):
                     log = self.exit_interface()
                     if not log:
                         break
+                    else:
+                        continue
                 elif (self.admin_selection >= 1 and self.admin_selection <= 4):
                     self.selection[self.admin_selection][1]()
                 else:
@@ -341,6 +346,8 @@ class AdminInterface(Interface):
                     log = self.exit_interface()
                     if not log:
                         break
+                    else:
+                        continue
                 elif (self.admin_course_selection >= 1 and self.admin_course_selection <= 4):
                     self.selection[self.admin_course_selection][1]()
                 else:
@@ -584,6 +591,8 @@ class AdminInterface(Interface):
                 get_exit_select = self.exit_interface()
                 if not get_exit_select:
                     break
+                else:
+                    continue
             else:
                 print("Please select a valid option. \n")
                 continue
@@ -664,6 +673,8 @@ class AdminInterface(Interface):
                 get_exit_select = self.exit_interface()
                 if not get_exit_select:
                     break
+                else:
+                    continue
             else:
                 print("Please select a valid option. \n")
                 continue
@@ -684,7 +695,8 @@ class AdminInterface(Interface):
                     print("Exiting...")
                     return False
                 elif exit_selection.lower() == "n":
-                    break
+                    return True
+                break
 
             except Exception:
                 print("Please enter a valid value. \n")
@@ -740,8 +752,8 @@ class StudentInterface(Interface):
                     print("Logging out...")
                     return False
                 elif exit_selection.lower() == "n":
-                    break
-
+                    return True
+                break
             except Exception:
                 print("Please enter a valid value. \n")
                 continue
