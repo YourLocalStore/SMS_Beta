@@ -1,4 +1,18 @@
 class PrintInformation:
+    """ The class where teachers/administrators are able to view student information and print them out.
+
+    Attributes:
+        student_info (tuple): All of the information about the student, typically a tuple
+
+    Methods:
+        __init__(self):
+            The constructor for the attributes (student/class ID).
+
+        def print_student(self):
+            Gets all of the student information and prints them out line by line, given 
+            the fields.
+    """
+
     def __init__(self, student_info):
         self.student_info = student_info
 

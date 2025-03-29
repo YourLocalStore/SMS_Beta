@@ -1,6 +1,22 @@
 import sqldb
 
 class RemoveStudents:
+    """ The class where teachers/administrators are able to remove students from specific classrooms only.
+
+    Attributes:
+        student_id (str): The ID of the student.
+        class_id (str): The ID of the classroom.
+
+    Methods:
+        __init__(self):
+            The constructor for the attributes (student/class ID).
+
+        def remove_person(self):
+            This method removes a student from a specific classroom. It first checks whether or not the
+            student actually exists within the classroom, so we can avoid teachers from removing random
+            students (who are not assigned to their specific class) off the database.
+    """
+
     def __init__(self, student_id, class_id):
         self.student_id = student_id
         self.class_id = class_id

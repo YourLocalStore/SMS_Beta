@@ -10,8 +10,21 @@ from abc import ABC, abstractmethod
 from threading import Thread
 
 class ConnectSQLDatabase:
-    db_name = "tester"
-    config = configparser.ConfigParser()
+    """ The class where the user attempts to connect to the database. The credentials are fed through an .ini file, which is configured
+        by the user.
+
+    Attributes:
+      self.sql_serv: This is the driver for the MySQL connection, that uses the .ini credentials.
+      self.db_cursor: Consider this to be the "navigator" the the database, where it executes and fetches data from the database.
+
+    Methods:
+      __init__(self): 
+          The constructor for this class, where the driver and cursor are instantiated, but also creates the database connection for the user.
+      create_db(self): When the database does not exist, this method is called. It attempts to create the database to use within the connection.
+    """
+
+    db_name = "tester"                   # The database to use across all installations.
+    config = configparser.ConfigParser() # Obtain the .ini file
 
     def __init__(self):
         try:
@@ -62,6 +75,64 @@ class ConnectSQLDatabase:
         return self.sql_serv.cursor()
     
 class DBOperations(ConnectSQLDatabase):
+    """ The class that initiates all of the database-related operations. This is related to the UserOperations() class, where
+        the a variety of operations for database information are gathered to return back to the user.
+
+    Methods:
+        __init__(self): 
+            Inherits from the ConnectSQLDatabase class in order to get the database cursor.
+            It buffers (loads to temporary memory) the cursor so that rows are fetched from the server
+            without row-fetching methods obtaining rows one at a time..
+
+        get_all_classrooms(self):
+            This returns all the classrooms within the database.
+
+        def get_user_info(self, table_name, username):
+            Returns the user's info based on the table they are a part of.
+
+        def get_classroom_from_id(self, cid):
+            Returns the classroom name based on the classroom ID.
+
+        def get_student_from_id(self, uid):
+            Returns the student based on ID.
+
+        def get_teacher_from_id(self, uid):
+            Returns the teacher based on ID.
+
+        def get_student_classnames(self, student_id):
+            Returns the classnames based on the student's ID, since the ID is a foreign key that references course names.
+
+        def get_student_class_id(self, student_id, class_name):
+            Return the student's classroom ID based on their ID and the class name.
+
+        def get_class_teacher_id(self, student_id, class_name):
+            Return the teacher ID based on the student's ID and the class name.
+
+        def student_exists_in_class(self, student_id, classroom_id):
+            Returns whether or not the students exists within a class.
+
+        def student_id_exists(self, student_id):
+            Returns whether or not the student exists based on ID.
+
+        def get_classroom_id(self, course, teacher_id, section):
+            Returns the classroom ID based on section, course, teacher ID.
+
+        def get_classroom_name(self, classroom_id):
+            Returns the classroom_name based on its ID.
+
+        def delete_class(self, course_name, class_id, section):
+            Removes a classroom from the classroom table based on course name, ID and section.
+
+        def delete_all_classes(self, teacher_id):
+            Removes all classes based on the teacher's ID.
+
+        def get_table_names(self):
+            Returns all of the table names in the database.
+
+        def close_serv_connection(self):
+            Closes the cursor when not needed.
+    """
+
     def __init__(self):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
@@ -86,16 +157,16 @@ class DBOperations(ConnectSQLDatabase):
     def get_user_info(self, table_name, username):
         table_list = ["teachers", "students", "administrators"]
 
-        if table_name not in table_list:
+        if table_name not in table_list:                # We check the table names first, and return None when it doesn't exist.
             print(f"\n{table_name} does not exist.")
             return None
         else:
-            for i in range(len(table_list)):
-                if table_list[i] == table_name:
-                    table_name = table_list[i]
+            for i in range(len(table_list)):            # Otherwise, loop through it
+                if table_list[i] == table_name:        
+                    table_name = table_list[i]          # Then set the table name to the one in the list.
                 break
             try:
-                row_query = f"""SELECT * FROM `{table_name}` WHERE UserName = %s"""
+                row_query = f"""SELECT * FROM `{table_name}` WHERE UserName = %s""" 
 
                 self.db_cursor.execute(row_query, (username,))
                 fetch_query = self.db_cursor.fetchone()
@@ -365,6 +436,46 @@ class DBOperations(ConnectSQLDatabase):
             return "Closing connection..."
 
 class UserOperations(DBOperations, ConnectSQLDatabase):
+    """ The class that initiates all of the user-related operations. This is related to the DBOperations() class, where
+        the a variety of operations for database information are gathered to return back to the user.
+
+    Methods:
+        __init__(self): 
+            Inherits from the ConnectSQLDatabase class in order to get the database cursor.
+            It buffers (loads to temporary memory) the cursor so that rows are fetched from the server
+            without row-fetching methods obtaining rows one at a time.
+
+        def teacher_show_students(self, teacher_id, classroom_name, class_id):
+            Shows all the students within a course from the teacher's view.
+
+        def students_show_students(self, teacher_id, classroom_name, class_id):
+            Shows all the students within a course from the student's view.
+
+        def show_all_students(self):
+            Returns a table of all the students.
+
+        def show_all_teachers(self):
+            Returns a table of all of the teachers.
+
+        def add_student(self, student_id, class_id):
+            Allows teacher to add a student to a course based on their ID and course ID.
+
+        def remove_student(self, student_id, classroom_id):
+            Removes a student from a specific classroom based on student ID and classroom ID.
+
+        def remove_student_record(self, student_id):
+            Removes an entire student's record from the student table.
+
+        def remove_teacher_record(self, teacher_id):
+            Removes an entire teacher's record from the teacher table.
+
+        def get_user_information(self, uid, role):
+            Returns all of the information about the user and outputs a table.
+
+        def assign_teacher(self, teacher_id, class_id):
+            Assigns a teacher to a classroom based on their ID and the class ID.
+    """
+
     def __init__(self):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
@@ -616,6 +727,17 @@ class UserOperations(DBOperations, ConnectSQLDatabase):
         pass
     
 class LoginCheck(ABC):
+    """ This is an abstract class mainly providing a blueprint for students, administrators and teachers
+        when logging in. It checks the information that the user gives.
+
+    Methods:
+        def login_user_exists(self):
+            An abstract method where it checks whether or not a user exists within the table.
+
+        def login_pwd_check(self):
+            An abstract method where it checks if a password is valid within the table.
+    """
+    
     @abstractmethod
     def login_user_exists(self):
         pass
@@ -625,6 +747,20 @@ class LoginCheck(ABC):
         pass
 
 class StudentLoginCheck(ConnectSQLDatabase, LoginCheck):
+    """ The class for student logins, where we check if the data given by the user is valid.
+
+    Methods:
+        __init__(self):
+            Inherits from the ConnectSQLDatabase class in order to get the database cursor.
+            It buffers (loads to temporary memory) the cursor so that rows are fetched from the server
+            without row-fetching methods obtaining rows one at a time.
+
+        def login_user_exists(self):
+            An abstract method where it checks whether or not a user exists within the table.
+            
+        def login_pwd_check(self):
+            An abstract method where it checks if a password is valid within the table.
+    """
     def __init__(self):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
@@ -664,6 +800,21 @@ class StudentLoginCheck(ConnectSQLDatabase, LoginCheck):
             return False
 
 class TeacherLoginCheck(ConnectSQLDatabase, LoginCheck):
+    """ The class for teacher logins, where we check if the data given by the user is valid.
+
+    Methods:
+        __init__(self):
+            Inherits from the ConnectSQLDatabase class in order to get the database cursor.
+            It buffers (loads to temporary memory) the cursor so that rows are fetched from the server
+            without row-fetching methods obtaining rows one at a time.
+
+        def login_user_exists(self):
+            An abstract method where it checks whether or not a user exists within the table.
+            
+        def login_pwd_check(self):
+            An abstract method where it checks if a password is valid within the table.
+    """
+
     def __init__(self):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
@@ -709,6 +860,21 @@ class TeacherLoginCheck(ConnectSQLDatabase, LoginCheck):
             return False
 
 class AdminLoginCheck(ConnectSQLDatabase, LoginCheck):
+    """ The class for administrator logins, where we check if the data given by the user is valid.
+
+    Methods:
+        __init__(self):
+            Inherits from the ConnectSQLDatabase class in order to get the database cursor.
+            It buffers (loads to temporary memory) the cursor so that rows are fetched from the server
+            without row-fetching methods obtaining rows one at a time.
+
+        def login_user_exists(self):
+            An abstract method where it checks whether or not a user exists within the table.
+            
+        def login_pwd_check(self):
+            An abstract method where it checks if a password is valid within the table.
+    """
+
     def __init__(self):
         super().__init__()
         self.db_cursor = self.sql_serv.cursor(buffered=True)
@@ -754,6 +920,38 @@ class AdminLoginCheck(ConnectSQLDatabase, LoginCheck):
             return False
 
 class CreateRegisterTables(ConnectSQLDatabase):
+    """ The class that initiates/creates majority of the tables used within the database. 
+
+    Attributes:
+        user_table (dict): This encapsulates many of the tables within the database, and stores them within a dictionary.
+                           It is also less expensive to do, as we clear the user_table every usage of this program and recreate them
+                           once it is used again (see https://dev.mysql.com/doc/connector-python/en/connector-python-example-ddl.html).
+
+    Methods:
+        __init__(self):
+            Inherits from the ConnectSQLDatabase class in order to get the database cursor.
+
+        def student_register_table(self):
+            The method that sets up the table for students.
+            
+        def teacher_register_table(self):
+           The method that sets up the table for teachers.
+        
+        def administrator_register_table(self):
+            The method that sets up the table for adminstrators.
+
+        def classroom_table(self):
+            The method that sets up the table for classrooms.
+
+        def student_classroom_tables(self):
+            The method that sets up the table for students and classrooms (based on ID). This uses foreign keys 
+            instead of primary ones, because we need to relate this to other tables when we join them.
+
+        def teacher_classroom_tables(self):
+            The method that sets up the table for teachers and classrooms (based on ID). This uses foreign keys 
+            instead of primary ones, because we need to relate this to other tables when we join them.
+    """
+
     user_table = {}
 
     def __init__(self):
@@ -949,7 +1147,18 @@ class CreateRegisterTables(ConnectSQLDatabase):
             raise SystemExit
         
 class RegisterClassrooms(DBOperations, ConnectSQLDatabase):
-    classroom_table = {}
+    """ The class that registers a teacher's classroom into the database table for 'classrooms'.
+
+    Methods:
+        __init__(self):
+            Inherits from the ConnectSQLDatabase class in order to get the database cursor.
+
+        def check_classroom_table(self, employee_id):
+            This is a method that checks for any of the classrooms attributed to a teacher's ID.
+            
+        def create_classroom(self, class_name, teacher_id, yr):
+            This is a method that creates the classroom for a teacher. 
+    """
 
     def __init__(self):
         super().__init__()
@@ -971,7 +1180,8 @@ class RegisterClassrooms(DBOperations, ConnectSQLDatabase):
                 return False
             
         except Exception as err:
-            print("BRUH")
+            print("Something went wrong checking classrooms! \n")
+            print(err)
 
     def create_classroom(self, class_name, teacher_id, yr):
         try:
@@ -979,15 +1189,15 @@ class RegisterClassrooms(DBOperations, ConnectSQLDatabase):
                              FROM Classrooms
                              WHERE CourseName = %s"""
             self.db_cursor.execute(count_query, (class_name,))
-            count_greater_than_zero = self.db_cursor.fetchone()[0] > 0 # Check the count
+            count_greater_than_zero = self.db_cursor.fetchone()[0] > 0 # We need to check the count, as we have to obtain the max section.
 
             if count_greater_than_zero:
-                max_section_query = """SELECT MAX(Section) FROM Classrooms WHERE CourseName = %s"""
-                self.db_cursor.execute(max_section_query, (class_name,))
-                max_section = self.db_cursor.fetchone()[0]
-                new_section = max_section + 1
+                max_section_query = """SELECT MAX(Section) FROM Classrooms WHERE CourseName = %s""" # Obtain the max section (int) based on course name.
+                self.db_cursor.execute(max_section_query, (class_name,))                        
+                max_section = self.db_cursor.fetchone()[0]                                          # Once we obtain the max section of the course,
+                new_section = max_section + 1                                                       # then we add one to it, as we figure that a class of the same name is being added.
             else:
-                new_section = 1 # default section is 1
+                new_section = 1 # The default section is one.
 
             create_query = """INSERT INTO classrooms(TeacherID, CourseName, Grade, Section) 
                               VALUES (%s, %s, %s, %s)"""
@@ -998,9 +1208,33 @@ class RegisterClassrooms(DBOperations, ConnectSQLDatabase):
             return new_section
             
         except Exception as err:
-            print("WHAT")
+            print("Something went wrong creating the classroom! \n")
+            print(err)
     
 class RegisterPerson(ConnectSQLDatabase):
+    """ The class that registers a student/teacher into their respective tables.
+
+    Methods:
+        __init__(self):
+            Instantiates all of the needed (personal) information about the user, 
+            and gets the SQL cursor inherited from the ConnectSQLDatabase class.
+
+        def get_student_uid(self):
+            Once registered, this method attempts to return the student's ID.
+            
+        def get_teacher_uid(self):
+            Once registered, this method attempts to return the teacher's ID.
+        
+        def register_teacher(self, fname, lname, username, email, password):  
+            This method aims to register a teacher based on the values that the users give.
+            It will then register this into the database, and give any important information before logging in.
+
+        def register_student(self, fname, lname, username, email, password):
+            This method aims to register a student based on the values that the users give.
+            It will then register this into the database, and give any important information before logging in.
+        
+    """
+
     def __init__(self, fname, lname, username, email, password):
         super().__init__()
         
@@ -1102,10 +1336,7 @@ class RegisterPerson(ConnectSQLDatabase):
             pass
 
 class CheckDBState(DBOperations):
-    """
-
-    ** Debugging purposes only**
-
+    """ Debugging purposes only
     """
     def __init__(self):
         super().__init__()

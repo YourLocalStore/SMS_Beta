@@ -1,6 +1,42 @@
 import sqldb
 
 class UpdateClass:
+    """ The class where users are able to update the information about a classroom. This module is restricted mainly to
+        students and administrators.
+
+    Attributes:
+        class_id (str): The classroom ID.
+        teacher_id (str): The teacher ID.
+        grade (str): The grade of the classroom.
+        course_name (str): The name of the classroom.
+        section (str): The section of the classroom.
+        db_op (obj): The initialization of the DBOperations() class in sqldb.py
+        user_op (obj): The initialization of the UserOperations() class in sqldb.py
+
+    Methods:
+        __init__(self):
+            The constructor for the database credentials.
+
+        def update_menu(self):
+            This method gives users the options to select what they need to update.
+        
+        def update_teacher_id(self, new_teacher_id):
+            This method updates the teacher's ID within the classroom. It first updates the 
+            classrooms and sets it, then deletes the related key in teacher_classroom based on classroom ID.
+            Then it reinserts the row with a new teacher ID.
+        
+        def update_course_year(self, new_course_year):
+            This method simply updates the grade/year of the course.
+        
+        def update_course_name(self, new_course_name):
+            This method updates the course name, and this comes without having to also change the section identities.
+            We first update the course name to its respective ID, then obtain all of the class names and IDs.
+
+            Once that happens, we store these class names in a dictionary for it to be counted and appended
+            into a "section list" which, in order, re-writes the section data into the database table.
+        
+    """
+
     def __init__(self, class_id, teacher_id, grade, course_name, section):
         self._class_id = class_id
         self.__teacher_id = teacher_id

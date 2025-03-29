@@ -1,6 +1,27 @@
 import sqldb
 
 class DeleteCourse:
+    """ The class where teachers and administrators can remove existing classrooms from the classrooms table in the database.
+
+    Attributes:
+        course_name (str): The classroom name.
+        class_id (str): The classroom ID.
+        section (str): The section of the classroom.
+        db_op (obj): The instantiation of the DBOperations() class in sqldb.py
+
+    Methods:
+        __init__(self):
+            The constructor for the attributes (course name, class ID, section, db_op)
+
+        def delete_course(self):
+            The method attempts to obtain all of the class names and IDs, of which are used to update the course
+            sections after deleting the classroom. Once that is done, the method makes sure to delete any relations based
+            in other tables.
+
+            These "relations" being in junction tables (i.e. student_classroom), and updates it accordingly by deleting 
+            the related information (student ID and class ID).
+    """
+
     def __init__(self, course_name, class_id, section):
         self.course_name = course_name
         self.class_id = class_id

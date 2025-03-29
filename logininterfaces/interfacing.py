@@ -14,6 +14,44 @@ from classroom_util.delete_classroom import DeleteCourse
 from account_util.update_account_info import UpdateInfo
 
 class TeacherInterface(Interface):
+    """ The class for the teacher interface, where the user is given a variety of options to conduct operations on
+        classrooms, students, and account information. Most operations are called from sqldb.py. 
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+
+    Methods:
+        __init__(self):
+            The constructor for the user's credentials after logging in, but also is utilized as a menu
+            for the user to select between these main options.
+
+        def class_details(self):
+            A method dedicated to checking the details of a teacher's classrooms and students.
+            This method will provide opportunities for the user to add their own classrooms, as well as
+            add or remove students.
+
+        def add_classroom(self):
+            A method that is used to add a classroom, and relate it to the teacher's ID within the database. 
+
+        def print_student_info(self, student_info):
+            A method to print a student's information out in a table.
+            
+        def account_information(self):
+            A method to get the user's own information out in a table.
+
+        def update_account_information(self):
+            A method to update the account information of a teacher, given their credentials and role.
+
+        def exit_interface():
+            A method to output an exit message, and options whether or not to exit the login interface.
+    """
+
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
@@ -281,6 +319,55 @@ class TeacherInterface(Interface):
                 continue
 
 class AdminInterface(Interface):
+    """ The class for the administrator interface, where the user is given a variety of options to conduct operations on
+        classrooms, students, and account information. Most operations are called from sqldb.py. 
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+
+    Methods:
+        __init__(self):
+            The constructor for the user's credentials after logging in, but also is utilized as a menu
+            for the user to select between these main options.
+
+        def view_all_courses(self):
+            The method in which the administrator is able to view all of the courses within the courses table.
+            They are given a variety of options, of which lead to different methods in this class, such as 
+            viewing specific classes, editing classes, deleting classes, etc..
+
+        def edit_courses(self):
+            A method that aims to update class info using the classroom ID.
+
+        def delete_course(self):
+            A method that removes a specific classroom given their ID. Administrators will be able to view a list
+            of all the classrooms first before making a choice.
+            
+        def remove_person(self):
+            A method that removes a teacher or student, there are two options: classroom, or record. 
+            For classroom options, it removes student/teacher from that specific class. However record-based
+            deletions will wipe the student/teacher from the table itself, wiping any data they had or added (e.g. Courses)
+
+        def view_individual_class(self):
+            A method to view the specific details about a class, just like what teachers are able to do when viewing their own.
+
+        def account_information(self):
+            A method that views all student information in the students or teachers table, as well as the user's on information.
+
+        def update_account_information(self):
+            A method that extends past the user and towards others in the database, i.e. Students and teachers. Administrators can edit those roles
+            and update username, email and password.
+        
+        def exit_interface():
+            A method to output an exit message, and options whether or not to exit the login interface.
+          
+    """
+
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
@@ -703,6 +790,42 @@ class AdminInterface(Interface):
                 continue
 
 class StudentInterface(Interface):
+    """ The class for the student interface, where the user is given a variety of options to conduct operations on
+        classrooms, students, and account information. Most operations are called from sqldb.py. Students are very limited in control,
+        and can only view the specific classses they are in, and are able to view/update their own information.
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+      student_id(str): If the user is a student, then they use a student ID (i.e. They do, in this class).
+
+    Methods:
+        __init__(self):
+            The constructor for the user's credentials after logging in, but also is utilized as a menu
+            for the user to select between these main options.
+
+        def class_details(self):
+            This method checks all of the course names that are related to the user in the database, amd prints them out
+            accordingly. This also gives an option whether or not to view a classroom they are in.
+
+        def view_classroom(self, teacher_id, class_name, class_id):
+            This returns a formatted table based on what course the user chose.
+
+        def account_information(self):
+            A method that views the student's own information in a table.
+
+        def update_account_information(self):
+            A method that gives students the opportunity to edit their own information (i.e. Username, email, password).
+        
+        def exit_interface():
+            A method to output an exit message, and options whether or not to exit the login interface.
+    """
+
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id, student_id):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
         self._student_id = student_id
@@ -739,22 +862,6 @@ class StudentInterface(Interface):
                     continue
 
             except ValueError:
-                print("Please enter a valid value. \n")
-                continue
-
-    @staticmethod
-    def exit_interface():
-        while True:
-            try:
-                exit_selection = input("\nAre you sure you want to log out? (Y/N): ")
-
-                if exit_selection.lower() == "y":
-                    print("Logging out...")
-                    return False
-                elif exit_selection.lower() == "n":
-                    return True
-                break
-            except Exception:
                 print("Please enter a valid value. \n")
                 continue
 
@@ -810,6 +917,22 @@ class StudentInterface(Interface):
             role="Student"
         )
         upd_info.update_menu()
+
+    @staticmethod
+    def exit_interface():
+        while True:
+            try:
+                exit_selection = input("\nAre you sure you want to log out? (Y/N): ")
+
+                if exit_selection.lower() == "y":
+                    print("Logging out...")
+                    return False
+                elif exit_selection.lower() == "n":
+                    return True
+                break
+            except Exception:
+                print("Please enter a valid value. \n")
+                continue
     
     def student_details(self):
         pass

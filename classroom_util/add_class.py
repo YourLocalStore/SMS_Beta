@@ -1,6 +1,21 @@
 import sqldb
 
 class AddClassroom:
+    """ A class mainly suited for teachers that want to add classrooms to the database. 
+
+    Attributes:
+        teacher_id (str): The teacher's ID.
+
+    Methods:
+        __init__(self):
+            The constructor for the attributes (teacher ID).
+
+        def add_person(self):
+            The method that asks the user was the class name and grade/year should be. Using these values, it then registers
+            the classroom accordingly, along with some sort of identifier (classroom ID, section), then assigns the teacher
+            who created it.
+    """
+
     def __init__(self, teacher_id):
         self.__teacher_id = teacher_id
 

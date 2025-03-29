@@ -8,6 +8,29 @@ from abc import ABC, abstractmethod
 from threading import Thread
 
 class LoginInterface():
+    """ A class for the login interface, this is where the user selects between a register/login menu 
+        for the varying roles, i.e. Students and Teachers but not Administrators. On all installations
+        of this program, a default administrator account is inserted into the database. 
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+
+    Methods:
+      __init__(self, fname, lname, username, email, password, teacher_id, administrator_id): 
+          The constructor for this class, which initiates all of the important information about
+          the user.
+
+      selection(self):
+        This is the printed interface where the user selections between four options to either register
+        or log in. This information will then be passed into one of three inherited classes.
+    """
+
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
         self.__fname = fname
         self.__lname = lname
@@ -106,6 +129,29 @@ class LoginInterface():
                 continue
 
 class AdminLoginInterface(LoginInterface):
+    """ This is the class for the administrator login interface, where users have the option to enter the
+        administrator credentials. It will first check for an existing user, then attempt to verify this information
+        within the MySQL connection. 
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+
+    Methods:
+      __init__(self, fname, lname, username, email, password, teacher_id, administrator_id): 
+          The constructor for this class, which initiates all of the important information about
+          the user, the values are inherited from the main Interface() class.
+
+      login(self):
+        The method of which the user enters the credentials for verification. If the user enters invalid values, then it sends
+        the user back to try again. Otherwise, the user moves into the actual administrator interface in logininterfaces.py.
+    """
+
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
     
@@ -113,8 +159,8 @@ class AdminLoginInterface(LoginInterface):
         print("\n   < Go Back (Enter 0) \t\t || Administrator Login Page ||" + \
               "\n # ------------------------------------------------------------- # \n ")
         
-        login_status = True
-        admin_login_obj = sqldb.AdminLoginCheck()
+        login_status = True                       # Set up a flag for a loop to tell when the user isn't logging in.
+        admin_login_obj = sqldb.AdminLoginCheck() # We first need to check if this user exists.
 
         while login_status:
             try:
@@ -133,24 +179,24 @@ class AdminLoginInterface(LoginInterface):
                     login_status = False
                     break
 
-                user_valid = admin_login_obj.login_user_exists(username, self._LoginInterface__administrator_id)
-                pwd_valid = admin_login_obj.login_pwd_check(username, pwd)
+                user_valid = admin_login_obj.login_user_exists(username, self._LoginInterface__administrator_id) # The user must be checked before we start querying the tables.
+                pwd_valid = admin_login_obj.login_pwd_check(username, pwd)                                       # The password is also checked.
 
                 if (not user_valid) or (not pwd_valid) or (not self._LoginInterface__administrator_id):
                     print("\n=========== Incorrect User Information. ===========\n")
                     continue
                 else:
                     print("Logging in...")
-                    db_operation = sqldb.DBOperations()
-                    tables = db_operation.get_table_names()
-                    admin_info = db_operation.get_user_info(tables[0], username)
-                    admin_user = interfacing.AdminInterface(
+                    db_operation = sqldb.DBOperations()                           # Operations from the database itself are gathered from sqldb.py.
+                    tables = db_operation.get_table_names()                       # Since we need to get the where the user belongs, we need table names.
+                    admin_info = db_operation.get_user_info(tables[0], username)  # The table name is hard-coded for the user, and we gather this information.
+                    admin_user = interfacing.AdminInterface(                      # Once the table has been gathered, we pass the provided information into the interface.
                         admin_info[1], admin_info[2],
                         admin_info[3], admin_info[4],
                         admin_info[5], self._LoginInterface__teacher_id,
                         self._LoginInterface__administrator_id
                     )
-                    if type(admin_user) == None:
+                    if type(admin_user) == None: 
                         break
                 break
 
@@ -159,6 +205,29 @@ class AdminLoginInterface(LoginInterface):
         return False
 
 class TeacherLoginInterface(LoginInterface):
+    """ This is the class for the teacher login interface, where users have the option to enter the
+        teacher credentials. It will first check for an existing user, then attempt to verify this information
+        within the MySQL connection. 
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+
+    Methods:
+      __init__(self, fname, lname, username, email, password, teacher_id, administrator_id): 
+          The constructor for this class, which initiates all of the important information about
+          the user, the values are inherited from the main Interface() class.
+
+      login(self):
+        The method of which the user enters the credentials for verification. If the user enters invalid values, then it sends
+        the user back to try again. Otherwise, the user moves into the actual teacher interface in logininterfaces.py.
+    """
+
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
     
@@ -214,6 +283,29 @@ class TeacherLoginInterface(LoginInterface):
         return False
 
 class StudentLoginInterface(LoginInterface):
+    """ This is the class for the student login interface, where users have the option to enter the
+        student credentials. It will first check for an existing user, then attempt to verify this information
+        within the MySQL connection. 
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+
+    Methods:
+      __init__(self, fname, lname, username, email, password, teacher_id, administrator_id): 
+          The constructor for this class, which initiates all of the important information about
+          the user, the values are inherited from the main Interface() class.
+
+      login(self):
+        The method of which the user enters the credentials for verification. If the student enters invalid values, then it sends
+        the user back to try again. Otherwise, the user moves into the actual teacher interface in logininterfaces.py.
+    """
+
     def __init__(self, fname, lname, username, email, password, teacher_id, administrator_id):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
@@ -265,11 +357,41 @@ class StudentLoginInterface(LoginInterface):
         return False
     
 class RegisterInterface(ABC):
+    """ A register interface that is purposely instantiated as an abstract class to set up a blueprint for 
+        the following register interfaces.
+
+    Methods:
+        user_register(self): The abstract method that the interfaces will use when the user begins to register and account.
+    """
     @abstractmethod
     def user_register(self):
         pass
     
 class TeacherRegisterInterface(RegisterInterface, LoginInterface):
+    """ The class for the teacher register interface, inheriting from both LoginInterface and RegisterInterface
+        classes for the abstracted method (user_register) and the instantiation of information passed into LoginInterface.
+        The user enters a variety of details before fully registering, i.e. First name, last name, username, etc...
+        The class will then provide a series of outputs that lets the user know the information they need to save before logging in.
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+
+    Methods:
+      __init__(self, fname, lname, username, email, password, teacher_id, administrator_id): 
+          The constructor for this class, which initiates all of the important information about
+          the user, the values are inherited from the LoginInterface() class.
+
+      user_register(self):
+        The instantiation of the abstract method in RegisterInterface(). It allows the user to enter a variety of details about
+        their user before registering it through the MySQL database. 
+    """
+
     def __init__(self, fname = "", lname = "", username = "", email = "", password = "", teacher_id = "", administrator_id = ""):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
@@ -336,6 +458,30 @@ class TeacherRegisterInterface(RegisterInterface, LoginInterface):
         return False
 
 class StudentRegisterInterface(RegisterInterface, LoginInterface):
+    """ The class for the student register interface, inheriting from both LoginInterface and RegisterInterface
+        classes for the abstracted method (user_register) and the instantiation of information passed into LoginInterface.
+        The user enters a variety of details before fully registering, i.e. First name, last name, username, etc...
+        The class will then provide a series of outputs that lets the user know the information they need to save before logging in.
+
+    Attributes:
+      fname (str): The first name of the user.
+      lname (str): The last name of the user.
+      email (str): The email address of the user.
+      username (str): The username of the user.
+      password (str): The password of the user.
+      teacher_id (str): If the user is a teacher, then they use a teacher ID.
+      administrator_id (str): If the user is an administrator, then they use an administrator ID.
+
+    Methods:
+      __init__(self, fname, lname, username, email, password, teacher_id, administrator_id): 
+          The constructor for this class, which initiates all of the important information about
+          the user, the values are inherited from the LoginInterface() class.
+
+      user_register(self):
+        The instantiation of the abstract method in RegisterInterface(). It allows the user to enter a variety of details about
+        their user before registering it through the MySQL database. 
+    """
+
     def __init__(self, fname = "", lname = "", username = "", email = "", password = "", teacher_id = "", administrator_id = ""):
         super().__init__(fname, lname, username, email, password, teacher_id, administrator_id)
 
@@ -403,20 +549,30 @@ class StudentRegisterInterface(RegisterInterface, LoginInterface):
         return False
 
 class Utilities:
+    """ The class to utilize multi-threading during the loading process, albeit only used when we try to connect to the
+        MySQL database and nothing else. 
+
+    Methods:
+        connect_to_db(self):
+            This method handles all the threads needed between the loading message and the database connection.
+        load_connect_msg(self, msg, thread):
+            This method takes in the thread, and the message that connect_to_db passes, and outputs a loading message
+    """
+
     def connect_to_db(self):
         try:
             msg = "Connecting to Database"
 
-            self.connection_thread = Thread(target=sqldb.CheckDBState.try_connection)
-            self.message_thread = Thread(
-                target=Utilities.load_connect_msg, 
+            self.connection_thread = Thread(target=sqldb.CheckDBState.try_connection) # Initiate the thread for attempting the connection.
+            self.message_thread = Thread(                                             # We then pass another thread, where we utilize the connection thread
+                target=Utilities.load_connect_msg,                                    # and output the load message until the connection succeeds. 
                 args=(self, msg, self.connection_thread,)
             )
 
-            self.connection_thread.start()
+            self.connection_thread.start() 
             self.message_thread.start()
 
-            self.connection_thread.join()
+            self.connection_thread.join() 
             self.message_thread.join()
             return True
 
@@ -425,6 +581,9 @@ class Utilities:
             print(f"Error: {err}")
 
     def load_connect_msg(self, msg, thread):
+        """ This method takes in a message and utilizes escape characters and the flush
+            argument to make the dots consecutively print out i.e. "Loading." -> "Loading.." -> "Loading..."
+        """
         loading = True
 
         while loading:
@@ -439,12 +598,14 @@ class Utilities:
                 print("Connection Successful! \n")
                 loading = False
                 break
-
             else:
                 print("Something went wrong! ")
                 break
     
 def main():
+    """ The main starting menu, which deploys the only visual logo in this program.
+        The user either enters an option between entering the program or exiting out.
+    """
     while True:
         try:
             print(titlescreen.title)
@@ -459,13 +620,13 @@ def main():
             user_selection = int(input("\nEnter a selection: "))
 
             if user_selection == 1:
-                user_login = LoginInterface(
+                user_login = LoginInterface(    # Instantiate the starting object -- i.e. The login interface
                     fname="", lname="", 
                     username="", email="", 
                     password="", teacher_id="",
                     administrator_id=""
                 )
-                user_login.selection()
+                user_login.selection()          # Then we proceed for the user to enter a selection menu
             elif user_selection == 2:
                 raise SystemExit
             
@@ -477,7 +638,7 @@ def main():
             continue
 
 if __name__ == "__main__":
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(os.path.dirname(os.path.abspath(__file__))) # Ensure that the **absolute** (current) directory for main is actually being used
 
     print("\nWelcome to the Student Management System (SMS)!")
     time.sleep(1.5)
@@ -486,10 +647,14 @@ if __name__ == "__main__":
     time.sleep(1.5)
 
     try:
-        util = Utilities()
-        connection_attempt = util.connect_to_db()
+        util = Utilities()                          # Instantiate the utility class for loading whenever we start
+        connection_attempt = util.connect_to_db()   # Attempt to connect the user to the database
 
         if connection_attempt:
+            """ These are the tables that are initiated the first time that the user starts this program.
+                This is checked on boot-up anyways to verify if the tables exist, otherwise we create them.
+            """
+
             create_tables = sqldb.CreateRegisterTables()
             create_tables.student_register_table()
             create_tables.teacher_register_table()
