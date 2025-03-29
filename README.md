@@ -52,6 +52,8 @@ If you haven't already, you will need to clone this project. In your VSCode Term
 ```
 git clone https://github.com/YourLocalStore/SMS_Beta.git
 ```
+Alternatively, you can simply download the ZIP file of this project, and move the unzipped folder into VSCode.
+
 Then, you must install the following packages/libraries by doing the following:
 ```
 pip install mysql-connector-python
@@ -62,13 +64,13 @@ pip install configparser
 ```
 
 # Getting Started (MySQL Connection)
-You will need to download the [SQL Installer](https://dev.mysql.com/downloads/installer/).
+You will need to download the [SQL Installer](https://dev.mysql.com/downloads/installer/), specifically the 352MB version in 32-bit.
 You may watch a [quick installation guide here](https://www.youtube.com/watch?v=pK-U5L75PYk), otherwise here are the steps:
 
-1. In the installer, you can choose between what features you can install. Just ensure that the installation includes both the ```MySQL Server``` and ```MySQL Workbench```
+1. In the installer, you can choose between what features you can install. Just ensure that the installation includes both the ```MySQL Server``` and ```MySQL Workbench```, if you are unsure, just select a full installation.
 2. Keep everything default, besides the password you make (making a user is not needed and will default to a ```root``` user). Ensure to keep this password, as it is important for the database connection.
 
-After installing, locate the "+" icon next to ```"MySQL Connections"``` in the ```MySQL Workbench```, then ensure the following settings in ```"Parameters"```:
+After installing, locate the "+" icon next to ```"MySQL Connections"``` in the ```MySQL Workbench```, then ensure the following settings in ```Parameters```:
 ```
 Connection Name - {Enter any name}
 Connection Method - Standard (TCP/IP)
@@ -82,7 +84,6 @@ Make sure that the MySQL Windows service is running ```(Task Manager -> Services
 
 For the final step, there is a config file in the codebase named ```Credential-Configuration.ini```.
 1. In ```Credential-Configuration.ini```, you will need to change the fields according to your database configuration.
-2. Once that is done, Save the ```Credential-Configuration.ini``` file, then run ```main.py```.
 
 This is what the ```Credential-Configuration.ini``` file should look like:
 ```ini
@@ -92,6 +93,9 @@ port =
 user =
 password = 
 ```
+
+2. Once that is done, Save the ```Credential-Configuration.ini``` file, then run ```main.py```.
+
 The ```.ini``` file will grab these credentials and use them in the SQL connector like so:
 ```python
 self.sql_serv = mysql.connector.connect(
