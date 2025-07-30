@@ -1,4 +1,4 @@
-Project for INFR2141U
+First-Year Programming Project for IT
 
 # Welcome to the Student Management System (SMS)!
 This is a simple, easy-to-use management system that is mainly housed on MySQL to fetch and send data. You can think of it as some sort of "simulator" for a traditional LMS, just simpler!
